@@ -44,8 +44,8 @@ subprojects {
     apply plugin: 'com.github.johnrengelman.shadow'
     apply plugin: "io.github.slimjar"
 
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    sourceCompatibility = '1.17'
+    targetCompatibility = '1.17'
     compileJava.options.encoding = "UTF-8"
     compileTestJava.options.encoding = "UTF-8"
 
