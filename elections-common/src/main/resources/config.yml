@@ -42,4 +42,4 @@ rank:
   strategy: "none" # None, both
 
 update:
-  check: false # set to true to check for updates when the plugin starts
+  check: true # set to true to check for updates when the plugin starts
