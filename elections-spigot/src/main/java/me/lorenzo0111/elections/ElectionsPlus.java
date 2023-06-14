@@ -81,6 +81,11 @@ public final class ElectionsPlus extends JavaPlugin {
         if (checkForUpdates) {
             Getters.updater(new UpdateChecker(new BukkitScheduler(this), this.getDescription().getVersion(), this.getName(), 93463, "https://www.spigotmc.org/resources/93463/", null, null));
         }
+
+        if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new ElectionsPlusPlaceholderExpansion(this).register();
+        }
+      
     }
 
     @Override
