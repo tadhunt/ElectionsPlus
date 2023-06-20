@@ -63,13 +63,13 @@ public class Messages {
     public static String prefix() { return prefix; }
     public static ConfigurationNode config() { return config; }
 
-    public static Map<String,String> single(String key, String value) {
+    public static Map<String, String> single(String key, String value) {
         Map<String, String> map = new HashMap<>();
         map.put(key, value);
         return map;
     }
 
-    public static Map<String,String> multiple(String... path) {
+    public static Map<String, String> multiple(String... path) {
         Map<String,String> map = new HashMap<>();
 
         String key = null;
@@ -204,7 +204,7 @@ public class Messages {
     }
 
     public static void send(Audience player, boolean prefix, Object... path) {
-        send(player, prefix , new HashMap<>(),path);
+        send(player, prefix, new HashMap<>(), path);
     }
 
     public static void send(Audience player, boolean prefix, Map<String,String> placeholders, Object... path) {

@@ -24,6 +24,7 @@
 
 package me.lorenzo0111.elections;
 
+import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.lorenzo0111.elections.api.IElectionsPlusAPI;
 import me.lorenzo0111.elections.api.implementations.ElectionsPlusAPI;
 import me.lorenzo0111.elections.cache.CacheManager;
@@ -40,12 +41,17 @@ import me.lorenzo0111.pluginslib.config.ConfigExtractor;
 import me.lorenzo0111.pluginslib.database.connection.SQLiteConnection;
 import me.lorenzo0111.pluginslib.dependency.DependencyManager;
 import me.lorenzo0111.pluginslib.updater.UpdateChecker;
+
 import net.milkbowl.vault.permission.Permission;
+
 import org.bstats.bukkit.Metrics;
+
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 
@@ -54,6 +60,8 @@ import java.net.URISyntaxException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.UUID;
 
 public final class ElectionsPlus extends JavaPlugin {
@@ -67,6 +75,7 @@ public final class ElectionsPlus extends JavaPlugin {
     private ConfigurationNode messages;
 
     private Permission permissions;
+    private HashMap<String, ElectionsHologram> holograms;
 
     @Override
     public void onEnable() {
@@ -75,17 +84,19 @@ public final class ElectionsPlus extends JavaPlugin {
         BukkitAudienceManager.init(this);
         new Metrics(this, 11735);
 
+        this.holograms = new HashMap<String, ElectionsHologram>();
         this.load();
         
         Boolean checkForUpdates = config.node("update", "check").getBoolean(false);
         if (checkForUpdates) {
+            this.getLogger().info("Enabling update checks...");
             Getters.updater(new UpdateChecker(new BukkitScheduler(this), this.getDescription().getVersion(), this.getName(), 93463, "https://www.spigotmc.org/resources/93463/", null, null));
         }
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            this.getLogger().info("Enabling PlaceholderAPI...");
             new ElectionsPlusPlaceholderExpansion(this).register();
         }
-      
     }
 
     @Override
@@ -276,5 +287,43 @@ public final class ElectionsPlus extends JavaPlugin {
         }
 
         return results;
+    }
+
+    public ElectionsHologram holoCreate(String name, Location location) {
+        if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
+            this.getLogger().severe("HolograpicDisplays plugin not enabled");
+            return null;
+        }
+        HolographicDisplaysAPI api = HolographicDisplaysAPI.get(this);
+
+        if (holograms.get(name) != null) {
+            this.getLogger().severe("holoCreate: duplicate name: " + name);
+            return null;
+        }
+
+        ElectionsHologram hologram = new ElectionsHologram(api, name, location);
+
+        holograms.put(hologram.name(), hologram);
+
+        return hologram;
+    }
+
+    public ElectionsHologram holoGet(String name) {
+        return holograms.get(name);
+    }
+
+    public Boolean holoDelete(String name) {
+        ElectionsHologram holo = holograms.remove(name);
+        if (holo == null) {
+            return false;
+        }
+
+        holo.delete();
+
+        return true;
+    }
+
+    public Collection<ElectionsHologram> holoList() {
+        return holograms.values();
     }
 }

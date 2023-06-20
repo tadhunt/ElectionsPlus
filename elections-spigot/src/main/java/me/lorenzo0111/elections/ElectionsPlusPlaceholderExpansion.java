@@ -26,9 +26,11 @@ package me.lorenzo0111.elections;
 
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Vote;
+
+import java.util.Map;
+
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 
@@ -60,9 +62,28 @@ public class ElectionsPlusPlaceholderExpansion extends PlaceholderExpansion {
         %election_isopen%
         %elections_isopen_<name>%
         %elections_voted_<election>%
-         */
+    */
     @Override
     public String onRequest(OfflinePlayer player, @NotNull String params) {
+        if (params.equalsIgnoreCase("info")) {
+            Map<String, Election> elections = plugin.getCache()
+                    .getElections()
+                    .map();
+
+            String r = "";
+            //ArrayList<String> results = new ArrayList<String>();
+            for (Election election : elections.values()) {
+                if (election.isOpen()) {
+                    //results.add(election.getName() + ": open");
+                    r += election.getName() + ": open\n";
+                } else {
+                    r += election.getName() + ": closed\n";
+                }
+            }
+            return r;
+            //return results.toString();
+        }
+
         if (params.equalsIgnoreCase("open")) {
             return String.valueOf(plugin.getCache().getElections().size());
         }

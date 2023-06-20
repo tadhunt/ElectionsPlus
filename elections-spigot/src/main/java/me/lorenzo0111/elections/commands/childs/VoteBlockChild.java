@@ -129,7 +129,6 @@ public class VoteBlockChild extends SubCommand implements Listener {
     }
 
     private void create(User<?>sender, Block block) {
-
         UUID world = block.getWorld().getUID();
         Map<String, Object> location = block.getLocation().serialize();
         String blockData = block.getBlockData().getAsString();
