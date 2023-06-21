@@ -214,7 +214,7 @@ public class DatabaseManager implements IDatabaseManager {
                                     .findFirst()
                                     .ifPresent(addedParties::add));
 
-                            Election election = new Election(resultSet.getString("name"),addedParties,resultSet.getInt("open") == 1);
+                            Election election = new Election(resultSet.getString("name"), addedParties,resultSet.getInt("open") == 1);
 
                             elections.add(election);
                         }

@@ -27,6 +27,8 @@ package me.lorenzo0111.elections;
 import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.lorenzo0111.elections.api.IElectionsPlusAPI;
 import me.lorenzo0111.elections.api.implementations.ElectionsPlusAPI;
+import me.lorenzo0111.elections.api.objects.Election;
+import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.cache.CacheManager;
 import me.lorenzo0111.elections.commands.ElectionsCommand;
 import me.lorenzo0111.elections.constants.Getters;
@@ -62,7 +64,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public final class ElectionsPlus extends JavaPlugin {
     private final CacheManager cache = new CacheManager();
@@ -181,14 +186,14 @@ public final class ElectionsPlus extends JavaPlugin {
     }
 
     public void reload() throws ConfigurateException {
-        ConfigExtractor messagesExtractor = new ConfigExtractor(this.getClass(),this.getDataFolder(),"messages.yml");
+        ConfigExtractor messagesExtractor = new ConfigExtractor(this.getClass(), this.getDataFolder(), "messages.yml");
         messagesExtractor.extract();
         this.messages = messagesExtractor.toConfigurate();
 
-        ConfigExtractor configExtractor = new ConfigExtractor(this.getClass(),this.getDataFolder(),"config.yml");
+        ConfigExtractor configExtractor = new ConfigExtractor(this.getClass(), this.getDataFolder(), "config.yml");
         configExtractor.extract();
         this.config = configExtractor.toConfigurate();
-        Messages.init(messages,config("prefix"),this);
+        Messages.init(messages,config("prefix"), this);
     }
 
     public void win(UUID uuid) {
@@ -201,7 +206,7 @@ public final class ElectionsPlus extends JavaPlugin {
         if (permissions == null)
             return;
 
-        permissions.playerAddGroup(Bukkit.getWorlds().get(0).getName(), Bukkit.getOfflinePlayer(uuid), config.node("rank","name").getString());
+        permissions.playerAddGroup(Bukkit.getWorlds().get(0).getName(), Bukkit.getOfflinePlayer(uuid), config.node("rank", "name").getString());
     }
 
     public ConfigurationNode config() {
@@ -301,7 +306,7 @@ public final class ElectionsPlus extends JavaPlugin {
             return null;
         }
 
-        ElectionsHologram hologram = new ElectionsHologram(api, name, location);
+        ElectionsHologram hologram = new ElectionsHologram(this, api, name, location);
 
         holograms.put(hologram.name(), hologram);
 
@@ -325,5 +330,81 @@ public final class ElectionsPlus extends JavaPlugin {
 
     public Collection<ElectionsHologram> holoList() {
         return holograms.values();
+    }
+
+    public void holoRefresh() {
+        for (ElectionsHologram holo : holograms.values()) {
+            holo.refresh();
+        }
+    }
+
+    public Map<String, Election> elections() {
+        List<Election> l = this.getManager().getElections().join();
+        this.getLogger().warning(String.format("found %d elections", l.size()));
+
+        HashMap<String, Election> m = new HashMap<String, Election>();
+
+        for(Election e : l) {
+            m.put(e.getName(), e);
+        }
+
+        return m;
+    }
+
+    /*
+    public Map<String, ElectionStatus>  electionsStatus() {
+        Map<String, Election> elections = this.elections();
+        HashMap<String, ElectionStatus> electionsStatus = new HashMap<String, ElectionStatus>();
+
+        for (Election election : elections.values()) {
+            ElectionStatus status = new ElectionStatus(election);
+            electionsStatus.put(election.getName(), status);
+        }
+
+        List<Vote> votes = this.getManager().getVotes().join();
+
+        this.getLogger().warning(String.format("found %d votes", votes.size()));
+
+
+        return electionsStatus;
+    }
+    */
+
+    public CompletableFuture<Map<String, ElectionStatus>> getElectionsStatus() {
+        this.getLogger().warning("starting getElectionsStatus");
+
+        CompletableFuture<Map<String, ElectionStatus>> future = new CompletableFuture<>();
+
+        this.getManager().getElections().thenAccept((elections) -> {
+            this.getLogger().warning("getElectionsStatus: got elections");
+            HashMap<String, ElectionStatus> electionsStatus = new HashMap<String, ElectionStatus>();
+
+            for (Election election : elections) {
+                electionsStatus.put(election.getName(), new ElectionStatus(election));
+            }
+
+            this.getLogger().warning("getElectionsStatus: created map");
+
+            this.getManager().getVotes().thenAccept((votes) -> {
+            this.getLogger().warning("getElectionsStatus: got votes");
+                for (Vote vote : votes) {
+                    String electionName = vote.getElection();
+                    String partyName = vote.getParty();
+
+                    ElectionStatus status = electionsStatus.get(electionName);
+                    if (status == null) {
+                        this.getLogger().warning(String.format("vote for election %s party %s: election not found", electionName, partyName));
+                        continue;
+                    }
+
+                    status.addVote(partyName);
+                }
+
+                this.getLogger().warning("getElectionsStatus: completed");
+                future.complete(electionsStatus);
+            });
+        });
+
+        return future;
     }
 }

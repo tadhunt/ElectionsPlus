@@ -118,6 +118,12 @@ public class HoloChild extends SubCommand implements Listener {
             return;
         }
 
+        if (args[1].equalsIgnoreCase("refresh")) {
+            plugin.holoRefresh();
+            Messages.send(sender.audience(), true, "hologram", "refreshed");
+            return;
+        }
+
         Messages.send(sender.audience(), true, "errors", "bad-args");
     }
 }

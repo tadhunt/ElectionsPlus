@@ -151,3 +151,11 @@ hologram:
   deleted:     "<gray>Hologram <yellow><name><gray> deleted."
   not-found:   "<red>Hologram <yellow><name><red> not found."
   list:        "<gray>Hologram <yellow><name><gray> location <yellow><location><gray>."
+  refreshed:   "<gray>Holograms refreshed."
+  text:        "<gray><text>."
+
+hologram-status:
+  open:             "<yellow><name><gray> » <yellow>Open<gray> » <yellow><totalvotes> <gray>votes cast so far."
+  closed-no-winner: "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. No winner."
+  closed-winner :   "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Winner <yellow><party><gray>."
+  closed-tie:       "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Tie <yellow><parties><gray>."
