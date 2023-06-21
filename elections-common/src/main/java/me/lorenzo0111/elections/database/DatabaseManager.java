@@ -318,7 +318,7 @@ public class DatabaseManager implements IDatabaseManager {
     @Override
     public void deleteElection(Election election) {
         cache.getElections().remove(election.getName());
-        electionsTable.removeWhere("name",election);
+        electionsTable.removeWhere("name", election);
     }
 
     @Override
@@ -344,7 +344,7 @@ public class DatabaseManager implements IDatabaseManager {
 
     @Override
     public CompletableFuture<Boolean> vote(UUID player, Party party, Election election) {
-        Vote vote = new Vote(player,party.getName(),election.getName());
+        Vote vote = new Vote(player, party.getName(), election.getName());
         return this.vote(vote);
     }
 
@@ -353,7 +353,7 @@ public class DatabaseManager implements IDatabaseManager {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
         this.getVotesTable()
-                .find("uuid",vote.getPlayer())
+                .find("uuid", vote.getPlayer())
                 .thenAccept((set) -> {
                     try {
                         while (set.next()) {
@@ -365,7 +365,7 @@ public class DatabaseManager implements IDatabaseManager {
 
                         this.getVotesTable().add(vote);
                         cache.getVotes()
-                                .add(vote.getElection()+"||"+vote.getPlayer(), vote);
+                                .add(vote.getElection() + "||" + vote.getPlayer(), vote);
                         future.complete(true);
                     } catch (SQLException e) {
                         e.printStackTrace();

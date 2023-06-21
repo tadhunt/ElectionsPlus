@@ -93,7 +93,6 @@ public class ElectionsHologram {
                     }
 
                     for (ElectionStatus status : electionsStatus.values()) {
-                        plugin.getLogger().warning("election status: " + status.toString());
 
                         Election election = status.getElection();
                         Map<String, String> placeholders = Messages.multiple("name", election.getName(), "totalvotes", status.totalVotes().toString());

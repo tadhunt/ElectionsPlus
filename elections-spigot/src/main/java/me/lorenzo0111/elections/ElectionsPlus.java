@@ -351,42 +351,17 @@ public final class ElectionsPlus extends JavaPlugin {
         return m;
     }
 
-    /*
-    public Map<String, ElectionStatus>  electionsStatus() {
-        Map<String, Election> elections = this.elections();
-        HashMap<String, ElectionStatus> electionsStatus = new HashMap<String, ElectionStatus>();
-
-        for (Election election : elections.values()) {
-            ElectionStatus status = new ElectionStatus(election);
-            electionsStatus.put(election.getName(), status);
-        }
-
-        List<Vote> votes = this.getManager().getVotes().join();
-
-        this.getLogger().warning(String.format("found %d votes", votes.size()));
-
-
-        return electionsStatus;
-    }
-    */
-
     public CompletableFuture<Map<String, ElectionStatus>> getElectionsStatus() {
-        this.getLogger().warning("starting getElectionsStatus");
-
         CompletableFuture<Map<String, ElectionStatus>> future = new CompletableFuture<>();
 
         this.getManager().getElections().thenAccept((elections) -> {
-            this.getLogger().warning("getElectionsStatus: got elections");
             HashMap<String, ElectionStatus> electionsStatus = new HashMap<String, ElectionStatus>();
 
             for (Election election : elections) {
                 electionsStatus.put(election.getName(), new ElectionStatus(election));
             }
 
-            this.getLogger().warning("getElectionsStatus: created map");
-
             this.getManager().getVotes().thenAccept((votes) -> {
-            this.getLogger().warning("getElectionsStatus: got votes");
                 for (Vote vote : votes) {
                     String electionName = vote.getElection();
                     String partyName = vote.getParty();
@@ -400,7 +375,6 @@ public final class ElectionsPlus extends JavaPlugin {
                     status.addVote(partyName);
                 }
 
-                this.getLogger().warning("getElectionsStatus: completed");
                 future.complete(electionsStatus);
             });
         });

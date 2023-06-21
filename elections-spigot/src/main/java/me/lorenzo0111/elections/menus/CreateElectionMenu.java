@@ -87,6 +87,7 @@ public class CreateElectionMenu extends BaseGui {
                                 }
 
                                 Messages.send(player, true, Messages.single("name", name), "election", "created");
+                                plugin.holoRefresh();
                             });
                 });
 

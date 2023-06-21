@@ -72,11 +72,12 @@ public class ElectionsMenu extends PaginatedGui {
 
                                 if (election.isOpen()) {
                                     election.close();
+                                    plugin.holoRefresh();
                                     return;
                                 }
 
-                                plugin.getManager()
-                                        .deleteElection(election);
+                                plugin.getManager().deleteElection(election);
+                                plugin.holoRefresh();
                                 return;
                             }
 

@@ -71,6 +71,7 @@ public class VoteMenu extends PaginatedGui {
                                 .thenAccept((b) -> {
                                    if (b) {
                                        Messages.send(e.getWhoClicked(),true, Messages.multiple("party", party.getName(), "election", election.getName()), "vote", "success");
+                                       ElectionsPlus.getInstance().holoRefresh();
                                        return;
                                    }
 

@@ -52,6 +52,18 @@ public class ElectionStatus {
         return totalVotes;
     }
 
+    void addVote(String partyName) {
+        Integer partyCount = partyVotes.get(partyName);
+        if (partyCount == null) {
+            partyCount = 0;
+        }
+
+        partyCount++;
+        partyVotes.put(partyName, partyCount);
+
+        totalVotes++;
+    }
+
     Map<String, Integer> winners() {
         Integer maxVotes = 0;
         Map<String, Integer> winners = new HashMap<String, Integer>();
@@ -84,17 +96,5 @@ public class ElectionStatus {
         }
 
         return winners;
-    }
-
-    void addVote(String partyName) {
-        Integer partyCount = partyVotes.get(partyName);
-        if (partyCount == null) {
-            partyCount = 0;
-        }
-
-        partyCount++;
-        partyVotes.put(partyName, partyCount);
-
-        totalVotes++;
     }
 }

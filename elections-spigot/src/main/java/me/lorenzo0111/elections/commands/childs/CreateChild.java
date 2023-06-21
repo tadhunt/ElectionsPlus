@@ -84,6 +84,7 @@ public class CreateChild extends SubCommand {
             }
 
             Messages.send(player, true, Messages.single("name", electionName), "election", "created");
+            plugin.holoRefresh();
         });
     }
 }
