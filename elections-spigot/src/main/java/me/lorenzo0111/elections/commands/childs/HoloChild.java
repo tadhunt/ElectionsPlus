@@ -112,7 +112,7 @@ public class HoloChild extends SubCommand implements Listener {
             Collection<ElectionsHologram> holograms = plugin.holoList();
 
             for (ElectionsHologram holo : holograms) {
-                Messages.send(sender.audience(), true, Messages.multiple("name", holo.name(), "location", holo.location().toString()), "hologram", "list");
+                Messages.send(sender.audience(), true, Messages.multiple("name", holo.getName(), "location", holo.getLocation().toString()), "hologram", "list");
             }
 
             return;

@@ -121,4 +121,10 @@ public class DBHologram implements DatabaseSerializable {
 
         return map;
     }
+
+    public String toJson() {
+        Map<String, Object> m = this.serialize();
+
+        return new Gson().toJson(m);
+    }
 }

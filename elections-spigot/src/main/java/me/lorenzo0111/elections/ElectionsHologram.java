@@ -23,6 +23,7 @@
 */
 package me.lorenzo0111.elections;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
 import com.google.gson.Gson;
+import com.google.common.reflect.TypeToken;
 
 import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.filoghost.holographicdisplays.api.hologram.Hologram;
@@ -46,47 +48,51 @@ public class ElectionsHologram {
     private DBHologram dbholo;
 
     ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, String name, Location location, List<String> contents, Boolean persist) {
-        this.plugin = plugin;
-        this.holoApi = api;
-        this.holo = holoApi.createHologram(location);
         if (contents == null) {
             contents = new ArrayList<String>();
         }
-        this.dbholo = new DBHologram(name, new Gson().toJson(location), contents, persist);
+
+        this.plugin = plugin;
+        this.holoApi = api;
+        this.dbholo = new DBHologram(name, new Gson().toJson(location.serialize()), contents, persist);
+        this.holo = holoApi.createHologram(location);
 
         refresh();
     }
 
     ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, DBHologram dbholo) {
-        Location location = new Gson().fromJson(dbholo.getLocation(), Location.class);
-
         this.plugin = plugin;
         this.holoApi = api;
-        this.holo = holoApi.createHologram(location);
         this.dbholo = dbholo;
+        this.holo = holoApi.createHologram(getLocation());
 
+        this.plugin.getLogger().warning("ElectionsHologram: calling refresh");
         refresh();
     }
 
-    public String name() {
+    public String getName() {
         return dbholo.getName();
     }
 
-    public Location location() {
-       return new Gson().fromJson(dbholo.getLocation(), Location.class);
+    public Location getLocation() {
+        Type type = new TypeToken<Map<String, Object>>() {}.getType();
+
+        return Location.deserialize(new Gson().fromJson(dbholo.getLocation(), type));
     }
 
-    public void set(List<String> newContents) {
+    /*
+    public void setContent(List<String> newContents) {
         dbholo.setContents(newContents);
 
         refresh();
     }
             
-    public void set(String content) {
+    public void setContent(String content) {
         this.dbholo.setContent(content);
 
         refresh();
     }
+    */
 
     public void refresh() {
         this.plugin.getElectionsStatus().thenAccept((electionsStatus) -> {

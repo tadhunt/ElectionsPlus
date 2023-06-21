@@ -82,7 +82,7 @@ public final class ElectionsPlus extends JavaPlugin {
 
     private Permission permissions;
     private HashMap<String, ElectionsHologram> holograms;
-    HolographicDisplaysAPI holoApi = HolographicDisplaysAPI.get(this);
+    HolographicDisplaysAPI holoApi;
 
     @Override
     public void onEnable() {
@@ -300,16 +300,33 @@ public final class ElectionsPlus extends JavaPlugin {
     private void holoInit() {
         this.holograms = new HashMap<String, ElectionsHologram>();
 
+        if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
+            this.getLogger().info("holograms disabled: HolograpicDisplays plugin not enabled");
+            this.holoApi = null;
+            return;
+        }
+        this.getLogger().info("holograms enabled");
+
+        this.holoApi = HolographicDisplaysAPI.get(this);
+
         this.getManager().getHolograms().thenAccept((dbholos) -> {
-            for (DBHologram dbholo : dbholos.values()) {
-                ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, dbholo);
-                holograms.put(hologram.name(), hologram);
-            }
+            this.getLogger().warning(String.format("%d db holograms loaded", dbholos.size()));
+            Bukkit.getScheduler().runTask(this, () -> {
+                try {
+                    for (DBHologram dbholo : dbholos.values()) {
+                        this.getLogger().warning("db holo: " + dbholo.toJson());
+                        ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, dbholo);
+                        holograms.put(hologram.getName(), hologram);
+                    }
+                } catch (Exception e) {
+                    this.getLogger().warning("holoInit: " + e.toString());
+                }
+            });
         });
     }
 
     public ElectionsHologram holoCreate(String name, Location location, List<String> contents) {
-        if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
+        if (this.holoApi == null) {
             this.getLogger().severe("HolograpicDisplays plugin not enabled");
             return null;
         }
@@ -321,7 +338,7 @@ public final class ElectionsPlus extends JavaPlugin {
 
         ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, name, location, contents, true);
 
-        holograms.put(hologram.name(), hologram);
+        holograms.put(hologram.getName(), hologram);
 
         return hologram;
     }
