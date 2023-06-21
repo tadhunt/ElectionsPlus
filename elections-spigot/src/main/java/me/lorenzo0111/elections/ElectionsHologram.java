@@ -30,47 +30,62 @@ import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 
+import com.google.gson.Gson;
+
 import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.filoghost.holographicdisplays.api.hologram.Hologram;
 import me.filoghost.holographicdisplays.api.hologram.HologramLines;
+import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.handlers.Messages;
 
 public class ElectionsHologram {
     private ElectionsPlus plugin;
     private HolographicDisplaysAPI holoApi;
-    private Hologram hologram;
-    private String name;
-    private Location location;
-    private ArrayList<String> contents;
+    private Hologram holo;
+    private DBHologram dbholo;
 
-    ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, String name, Location location) {
+    ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, String name, Location location, List<String> contents, Boolean persist) {
         this.plugin = plugin;
         this.holoApi = api;
-        this.name = name;
-        this.location = location;
-        this.contents = new ArrayList<String>();
-        this.hologram = holoApi.createHologram(this.location);
+        this.holo = holoApi.createHologram(location);
+        if (contents == null) {
+            contents = new ArrayList<String>();
+        }
+        this.dbholo = new DBHologram(name, new Gson().toJson(location), contents, persist);
+
+        refresh();
+    }
+
+    ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, DBHologram dbholo) {
+        Location location = new Gson().fromJson(dbholo.getLocation(), Location.class);
+
+        this.plugin = plugin;
+        this.holoApi = api;
+        this.holo = holoApi.createHologram(location);
+        this.dbholo = dbholo;
+
+        refresh();
     }
 
     public String name() {
-        return name;
+        return dbholo.getName();
     }
 
     public Location location() {
-        return location;
+       return new Gson().fromJson(dbholo.getLocation(), Location.class);
     }
 
     public void set(List<String> newContents) {
-        contents = new ArrayList<String>(newContents);
+        dbholo.setContents(newContents);
+
         refresh();
     }
             
     public void set(String content) {
-            contents.clear();
-            contents.add(content);
+        this.dbholo.setContent(content);
 
-            refresh();
+        refresh();
     }
 
     public void refresh() {
@@ -82,18 +97,16 @@ public class ElectionsHologram {
     private void update(Map<String, ElectionStatus> electionsStatus) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             try {
-                HologramLines holoLines = hologram.getLines();
+                HologramLines holoLines = holo.getLines();
                 holoLines.clear();
 
-                for (String line : contents) {
+                for (String line : dbholo.getContents()) {
                     if (!line.equals("%elections_status%")) {
-                        holoLines.appendText(line);
-                        //holoLines.appendText(Messages.componentString(false, Messages.single("text", line), "hologram", "text"));
+                        holoLines.appendText(Messages.componentString(false, Messages.single("text", line), "hologram", "text"));
                         continue;
                     }
 
                     for (ElectionStatus status : electionsStatus.values()) {
-
                         Election election = status.getElection();
                         Map<String, String> placeholders = Messages.multiple("name", election.getName(), "totalvotes", status.totalVotes().toString());
                         if (election.isOpen()) {
@@ -132,10 +145,12 @@ public class ElectionsHologram {
     }
 
     public void clear() {
-        hologram.getLines().clear();
+        holo.getLines().clear();
+        dbholo.clear();
     }
 
     public void delete() {
-        hologram.delete();
+        holo.delete();
+        dbholo.delete();
     }
 }

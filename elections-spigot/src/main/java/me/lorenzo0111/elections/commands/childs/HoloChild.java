@@ -76,14 +76,14 @@ public class HoloChild extends SubCommand implements Listener {
             Location location = player.getLocation();
             String name = a.get(0);
             String content = a.get(1);
+            ArrayList<String> contents = new ArrayList<String>();
+            contents.add(content);
 
-            ElectionsHologram hologram = plugin.holoCreate(name, location);
+            ElectionsHologram hologram = plugin.holoCreate(name, location, contents);
             if (hologram == null) {
                 Messages.send(sender.audience(), true, "hologram", "create-fail");
                 return;
             }
-
-            hologram.set(content);
 
             Messages.send(sender.audience(), true, Messages.single("name", name), "hologram", "created");
             return;

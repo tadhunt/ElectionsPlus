@@ -24,6 +24,7 @@
 
 package me.lorenzo0111.elections.database;
 
+import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
 import me.lorenzo0111.elections.api.objects.Party;
@@ -53,4 +54,9 @@ public interface IDatabaseManager {
     CompletableFuture<List<ElectionBlock>> getElectionBlocks();
     CompletableFuture<ElectionBlock> createElectionBlock(UUID world, Map <String, Object> location, String blockData);
     void deleteElectionBlock(ElectionBlock electionBlock);
+
+    CompletableFuture<Map<String, DBHologram>> getHolograms();
+    CompletableFuture<DBHologram> createHologram(String name, String location, List<String> contents);
+    void deleteHologram(String name);
+    void updateHologram(DBHologram hologram);
 }

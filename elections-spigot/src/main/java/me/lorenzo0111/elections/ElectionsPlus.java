@@ -27,6 +27,7 @@ package me.lorenzo0111.elections;
 import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.lorenzo0111.elections.api.IElectionsPlusAPI;
 import me.lorenzo0111.elections.api.implementations.ElectionsPlusAPI;
+import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.cache.CacheManager;
@@ -81,6 +82,7 @@ public final class ElectionsPlus extends JavaPlugin {
 
     private Permission permissions;
     private HashMap<String, ElectionsHologram> holograms;
+    HolographicDisplaysAPI holoApi = HolographicDisplaysAPI.get(this);
 
     @Override
     public void onEnable() {
@@ -89,7 +91,6 @@ public final class ElectionsPlus extends JavaPlugin {
         BukkitAudienceManager.init(this);
         new Metrics(this, 11735);
 
-        this.holograms = new HashMap<String, ElectionsHologram>();
         this.load();
         
         Boolean checkForUpdates = config.node("update", "check").getBoolean(false);
@@ -102,6 +103,8 @@ public final class ElectionsPlus extends JavaPlugin {
             this.getLogger().info("Enabling PlaceholderAPI...");
             new ElectionsPlusPlaceholderExpansion(this).register();
         }
+
+        this.holoInit();
     }
 
     @Override
@@ -294,19 +297,29 @@ public final class ElectionsPlus extends JavaPlugin {
         return results;
     }
 
-    public ElectionsHologram holoCreate(String name, Location location) {
+    private void holoInit() {
+        this.holograms = new HashMap<String, ElectionsHologram>();
+
+        this.getManager().getHolograms().thenAccept((dbholos) -> {
+            for (DBHologram dbholo : dbholos.values()) {
+                ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, dbholo);
+                holograms.put(hologram.name(), hologram);
+            }
+        });
+    }
+
+    public ElectionsHologram holoCreate(String name, Location location, List<String> contents) {
         if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
             this.getLogger().severe("HolograpicDisplays plugin not enabled");
             return null;
         }
-        HolographicDisplaysAPI api = HolographicDisplaysAPI.get(this);
 
         if (holograms.get(name) != null) {
             this.getLogger().severe("holoCreate: duplicate name: " + name);
             return null;
         }
 
-        ElectionsHologram hologram = new ElectionsHologram(this, api, name, location);
+        ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, name, location, contents, true);
 
         holograms.put(hologram.name(), hologram);
 
@@ -336,19 +349,6 @@ public final class ElectionsPlus extends JavaPlugin {
         for (ElectionsHologram holo : holograms.values()) {
             holo.refresh();
         }
-    }
-
-    public Map<String, Election> elections() {
-        List<Election> l = this.getManager().getElections().join();
-        this.getLogger().warning(String.format("found %d elections", l.size()));
-
-        HashMap<String, Election> m = new HashMap<String, Election>();
-
-        for(Election e : l) {
-            m.put(e.getName(), e);
-        }
-
-        return m;
     }
 
     public CompletableFuture<Map<String, ElectionStatus>> getElectionsStatus() {

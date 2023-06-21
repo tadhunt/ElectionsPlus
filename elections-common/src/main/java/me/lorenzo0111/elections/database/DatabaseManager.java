@@ -28,6 +28,8 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+
+import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
 import me.lorenzo0111.elections.api.objects.Party;
@@ -61,6 +63,7 @@ public class DatabaseManager implements IDatabaseManager {
     private ETable partiesTable;
     private ETable electionsTable;
     private ETable blocksTable;
+    private ETable hologramsTable;
 
     private final IConnectionHandler connectionHandler;
     private final CacheManager cache;
@@ -141,6 +144,13 @@ public class DatabaseManager implements IDatabaseManager {
         this.blocksTable = new ETable(scheduler, connectionHandler, "blocks", blocksColumns);
         this.blocksTable.create();
 
+        // Holograms
+        List<Column> hologramsColumns = new ArrayList<>();
+        hologramsColumns.add(new Column("name", "TEXT"));
+        hologramsColumns.add(new Column("json", "TEXT"));
+        this.hologramsTable = new ETable(scheduler, connectionHandler, "holograms", hologramsColumns);
+        this.hologramsTable.create();
+
         scheduler.repeating(new CacheTask(this, cache), 60 * 20L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
     }
 
@@ -158,6 +168,10 @@ public class DatabaseManager implements IDatabaseManager {
 
     public ETable getBlocksTable() {
         return blocksTable;
+    }
+
+    public ETable getHologramsTable() {
+        return hologramsTable;
     }
 
     @Override
@@ -438,5 +452,68 @@ public class DatabaseManager implements IDatabaseManager {
     public void deleteElectionBlock(ElectionBlock electionBlock) {
         // TODO(tadhunt): correctly handle different worlds
         blocksTable.removeWhere("location", electionBlock.getLocation());
+    }
+
+    @Override
+    public CompletableFuture<Map<String, DBHologram>> getHolograms() {
+        CompletableFuture<Map<String, DBHologram>> future = new CompletableFuture<>();
+
+        getHologramsTable().run(() -> {
+            try {
+                Statement statement = connectionHandler.getConnection().createStatement();
+                String query = String.format("SELECT * FROM %s;", getHologramsTable().getName());
+                ResultSet resultSet = statement.executeQuery(query);
+
+                HashMap<String, DBHologram> holograms = new HashMap<String, DBHologram>();
+
+                while (resultSet.next()) {
+                    String jsonString = resultSet.getString("json");
+
+                    DBHologram hologram = new Gson().fromJson(jsonString, DBHologram.class);
+                    holograms.put(hologram.getName(), hologram);
+                }
+
+                future.complete(holograms);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                future.complete(null);
+            }
+        });
+
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<DBHologram> createHologram(String name, String location, List<String> contents) {
+        DBHologram hologram = new DBHologram(name, location, contents);
+        CompletableFuture<DBHologram> future = new CompletableFuture<>();
+        hologramsTable.find("name", name)
+                .thenAccept((resultSet) -> {
+                    try {
+                        if (resultSet.next()) {
+                                future.complete(null);
+                                return;
+                        }
+
+                        hologramsTable.add(hologram);
+                        future.complete(hologram);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                });
+
+        return future;
+    }
+
+    @Override
+    public void deleteHologram(String name) {
+        hologramsTable.removeWhere("name", name);
+    }
+
+    @Override
+    public void updateHologram(DBHologram hologram) {
+        hologramsTable
+            .removeWhere("name", hologram.getName())
+            .thenRun(() -> hologramsTable.add(hologram));
     }
 }
