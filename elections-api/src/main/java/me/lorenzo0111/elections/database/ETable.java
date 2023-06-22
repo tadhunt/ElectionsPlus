@@ -62,7 +62,7 @@ public class ETable {
     public void create() {
         StringBuilder query = new StringBuilder(Queries.builder().query(Queries.CREATE_START).table(name).build());
 
-        columns.forEach(column -> query.append(String.format("`%s` %s,",column.getName(),column.getType())));
+        columns.forEach(column -> query.append(String.format("`%s` %s,", column.getName(), column.getType())));
 
         try {
             Statement statement = connection.getConnection().createStatement();
@@ -87,10 +87,10 @@ public class ETable {
                 List<DatabaseSerializable> list = new ArrayList<>();
 
                 while (set.next()) {
-                    Map<String,Object> map = new HashMap<>();
+                    Map<String, Object> map = new HashMap<>();
                     columns.forEach((column) -> {
                         try {
-                            map.put(column.getName(),set.getObject(column.getName()));
+                            map.put(column.getName(), set.getObject(column.getName()));
                         } catch (SQLException e) {
                             e.printStackTrace();
                         }
@@ -140,7 +140,7 @@ public class ETable {
             try {
                 StringBuilder builder = new StringBuilder(Queries.builder().query(Queries.INSERT_START).table(name).build());
 
-                Map<String,Object> map = serializable.serialize();
+                Map<String, Object> map = serializable.serialize();
 
                 for (String column : map.keySet()) {
                     builder.append(column).append(",");
@@ -164,7 +164,7 @@ public class ETable {
 
                 int i = 1;
                 for (Object obj : map.values()) {
-                    statement.setObject(i,obj);
+                    statement.setObject(i, obj);
                     i++;
                 }
 
@@ -222,7 +222,7 @@ public class ETable {
      * @return A completable future with the amount of the affected tables
      */
     public CompletableFuture<Integer> removeWhere(String key, DatabaseSerializable serializable) {
-        return this.removeWhere(key,serializable.serialize().get(key));
+        return this.removeWhere(key, serializable.serialize().get(key));
     }
 
     /**

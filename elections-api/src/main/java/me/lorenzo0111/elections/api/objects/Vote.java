@@ -45,7 +45,7 @@ public class Vote implements DatabaseSerializable {
         this.party = party;
         this.election = election;
     }
-                        
+
     public String getKey() {
         return getElection() + "||" + getPlayer();
     }
