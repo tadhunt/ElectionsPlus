@@ -27,6 +27,7 @@ package me.lorenzo0111.elections;
 import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.lorenzo0111.elections.api.IElectionsPlusAPI;
 import me.lorenzo0111.elections.api.implementations.ElectionsPlusAPI;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Vote;
@@ -68,7 +69,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public final class ElectionsPlus extends JavaPlugin {
     private final CacheManager cache = new CacheManager();
@@ -147,7 +147,7 @@ public final class ElectionsPlus extends JavaPlugin {
         switch (getConfig().getString("database.type", "NULL").toUpperCase()) {
             case "SQLITE":
                 try {
-                    this.manager = new DatabaseManager(new BukkitScheduler(this), cache, config(), new SQLiteConnection(getDataFolder().toPath()));
+                    this.manager = new DatabaseManager(this.getLogger(), new BukkitScheduler(this), cache, config(), new SQLiteConnection(getDataFolder().toPath()));
                     Getters.database(manager);
                 } catch (SQLException | IOException e) {
                     e.printStackTrace();
@@ -155,7 +155,7 @@ public final class ElectionsPlus extends JavaPlugin {
                 break;
             case "MYSQL":
                 try {
-                    this.manager = new DatabaseManager(config, cache, getDataFolder().toPath(), new BukkitScheduler(this));
+                    this.manager = new DatabaseManager(this.getLogger(), config, cache, getDataFolder().toPath(), new BukkitScheduler(this));
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
@@ -179,7 +179,7 @@ public final class ElectionsPlus extends JavaPlugin {
             this.getLogger().info("Loading libraries..");
             this.getLogger().info("Note: This might take a few minutes on first run.");
 
-            DependencyManager manager = new DependencyManager(getName(),getDataFolder().toPath());
+            DependencyManager manager = new DependencyManager(getName(), getDataFolder().toPath());
             long time = manager.build();
             this.getLogger().info("Loaded all libraries in " + time + "ms");
             this.start();
@@ -196,7 +196,7 @@ public final class ElectionsPlus extends JavaPlugin {
         ConfigExtractor configExtractor = new ConfigExtractor(this.getClass(), this.getDataFolder(), "config.yml");
         configExtractor.extract();
         this.config = configExtractor.toConfigurate();
-        Messages.init(messages,config("prefix"), this);
+        Messages.init(messages, config("prefix"), this);
     }
 
     public void win(UUID uuid) {
@@ -363,39 +363,51 @@ public final class ElectionsPlus extends JavaPlugin {
     }
 
     public void holoRefresh() {
-        for (ElectionsHologram holo : holograms.values()) {
-            holo.refresh();
+        try {
+            this.getLogger().warning("refreshing holograms");
+            for (ElectionsHologram holo : holograms.values()) {
+                this.getLogger().warning("refreshing hologram " + holo.getName());
+                holo.refresh();
+            }
+        } catch(Exception e) {
+            this.getLogger().severe("EXCEPTION: " + e.toString());
         }
     }
 
-    public CompletableFuture<Map<String, ElectionStatus>> getElectionStatuses() {
-        CompletableFuture<Map<String, ElectionStatus>> future = new CompletableFuture<>();
+    public Map<String, ElectionStatus> getElectionStatuses() {
+        HashMap<String, ElectionStatus> statuses = new HashMap<String, ElectionStatus>();
 
-        this.getManager().getElections().thenAccept((elections) -> {
-            HashMap<String, ElectionStatus> electionsStatus = new HashMap<String, ElectionStatus>();
+        Cache<String, Election> elections = this.getCache().getElections();
+        if (elections == null) {
+            this.getLogger().severe("getElectionStatuses: null elections");
+            return statuses;
+        }
+        this.getLogger().info(String.format("getElectionStatuses: got %d elections", elections.size()));
 
-            for (Election election : elections) {
-                electionsStatus.put(election.getName(), new ElectionStatus(election));
+        for (Election election : elections.map().values()) {
+            statuses.put(election.getName(), new ElectionStatus(election));
+        }
+
+        Cache<String, Vote> votes = this.getCache().getVotes();
+        if (votes == null) {
+            this.getLogger().severe("getElectionStatuses: null votes");
+            return statuses;
+        }
+
+        this.getLogger().severe(String.format("getElectionStatuses: got %d votes", votes == null ? -1 : votes.size()));
+        for (Vote vote : votes.map().values()) {
+            String electionName = vote.getElection();
+            String partyName = vote.getParty();
+
+            ElectionStatus status = statuses.get(electionName);
+            if (status == null) {
+                this.getLogger().warning(String.format("vote for election %s party %s: election not found", electionName, partyName));
+                continue;
             }
 
-            this.getManager().getVotes().thenAccept((votes) -> {
-                for (Vote vote : votes) {
-                    String electionName = vote.getElection();
-                    String partyName = vote.getParty();
+            status.addVote(partyName);
+        }
 
-                    ElectionStatus status = electionsStatus.get(electionName);
-                    if (status == null) {
-                        this.getLogger().warning(String.format("vote for election %s party %s: election not found", electionName, partyName));
-                        continue;
-                    }
-
-                    status.addVote(partyName);
-                }
-
-                future.complete(electionsStatus);
-            });
-        });
-
-        return future;
+        return statuses;
     }
 }

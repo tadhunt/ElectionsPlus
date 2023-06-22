@@ -42,7 +42,7 @@ public class ElectionsTask implements Job {
 
         IDatabaseManager database = Getters.database();
         database.getParties()
-                .thenAccept((parties) -> database.createElection(name,parties));
+                .thenAccept((parties) -> database.createElection(name, parties));
     }
 
 }

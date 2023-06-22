@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
- package me.lorenzo0111.elections.database;
+package me.lorenzo0111.elections.database;
 
 import me.lorenzo0111.pluginslib.StringUtils;
 import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
@@ -197,22 +197,24 @@ public class ETable {
      * @param value Value of the key
      * @return A completable future with the amount of the affected tables
      */
-    public CompletableFuture<Integer> removeWhere(String key, Object value) {
-        final CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
+    public CompletableFuture<Object> removeWhere(String key, Object value) {
+        final CompletableFuture<Object> future = new CompletableFuture<>();
 
         this.run(() -> {
             try {
                 final PreparedStatement statement = getConnection().prepareStatement(Queries.builder().query(Queries.DELETE_WHERE).table(name).keys(key).build());
                 statement.setObject(1, value);
 
-                completableFuture.complete(statement.executeUpdate());
+                Integer result = statement.executeUpdate();
+                future.complete(result);
                 statement.close();
             } catch (SQLException e) {
                 e.printStackTrace();
+                future.complete(e.toString());
             }
         });
 
-        return completableFuture;
+        return future;
     }
 
     /**
@@ -221,7 +223,7 @@ public class ETable {
      * @param serializable serializable that contains the key
      * @return A completable future with the amount of the affected tables
      */
-    public CompletableFuture<Integer> removeWhere(String key, DatabaseSerializable serializable) {
+    public CompletableFuture<Object> removeWhere(String key, DatabaseSerializable serializable) {
         return this.removeWhere(key, serializable.serialize().get(key));
     }
 
@@ -232,21 +234,22 @@ public class ETable {
      * @return A ResultSet
      */
     public CompletableFuture<ResultSet> find(String key, Object value) {
-        final CompletableFuture<ResultSet> completableFuture = new CompletableFuture<>();
+        final CompletableFuture<ResultSet> future = new CompletableFuture<>();
 
         this.run(() -> {
             try {
                 final PreparedStatement statement = getConnection().prepareStatement(Queries.builder().query(Queries.FIND).table(name).keys(key).build());
                 statement.setObject(1, value);
 
-                completableFuture.complete(statement.executeQuery());
+                future.complete(statement.executeQuery());
                 statement.closeOnCompletion();
             } catch (SQLException e) {
                 e.printStackTrace();
+                future.complete(null);
             }
         });
 
-        return completableFuture;
+        return future;
     }
 
     /**

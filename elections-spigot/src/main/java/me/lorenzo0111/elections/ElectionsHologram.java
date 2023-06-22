@@ -80,39 +80,31 @@ public class ElectionsHologram {
         return Location.deserialize(new Gson().fromJson(dbholo.getLocation(), type));
     }
 
-    /*
-    public void setContent(List<String> newContents) {
-        dbholo.setContents(newContents);
-
-        refresh();
-    }
-            
-    public void setContent(String content) {
-        this.dbholo.setContent(content);
-
-        refresh();
-    }
-    */
-
     public void refresh() {
-        this.plugin.getElectionStatuses().thenAccept((electionStatuses) -> {
-                this.update(electionStatuses);
-        });
+        this.plugin.getLogger().severe("refresh: fetching statuses");
+        Map<String, ElectionStatus> statuses = this.plugin.getElectionStatuses();
+        this.update(statuses);
     }
-                
+
     private void update(Map<String, ElectionStatus> statuses) {
+        this.plugin.getLogger().severe("update: " + dbholo.getName() + ": start");
         Bukkit.getScheduler().runTask(plugin, () -> {
+            this.plugin.getLogger().severe("update: updating " + dbholo.getName());
             try {
                 HologramLines holoLines = holo.getLines();
                 holoLines.clear();
 
                 for (String line : dbholo.getContents()) {
+                    this.plugin.getLogger().severe(String.format("update: holo %s: line %s", dbholo.getName(), line));
                     if (!line.equals("%elections_status%")) {
                         holoLines.appendText(Messages.componentString(false, Messages.single("text", line), "hologram", "text"));
                         continue;
                     }
 
+                    this.plugin.getLogger().severe(String.format("update: holo %s: %d statuses", dbholo.getName(), statuses.size()));
+
                     for (ElectionStatus status : statuses.values()) {
+                        this.plugin.getLogger().severe(String.format("update: holo %s: status: %s", dbholo.getName(), status.toString()));
                         Election election = status.getElection();
                         Map<String, String> placeholders = Messages.multiple("name", election.getName(), "totalvotes", status.totalVotes().toString());
                         if (election.isOpen()) {

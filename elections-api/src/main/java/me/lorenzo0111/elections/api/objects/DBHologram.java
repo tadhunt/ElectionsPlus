@@ -114,7 +114,7 @@ public class DBHologram implements DatabaseSerializable {
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        Map<String,Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
 
         map.put("name", name);
         map.put("json", new Gson().toJson(this));

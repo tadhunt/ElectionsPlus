@@ -24,7 +24,6 @@
 
 package me.lorenzo0111.elections.api.objects;
 
-import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,7 +45,7 @@ public class Vote implements DatabaseSerializable {
         this.election = election;
     }
 
-    public String getKey() {
+    public String getCacheKey() {
         return getElection() + "||" + getPlayer();
     }
 
@@ -109,9 +108,5 @@ public class Vote implements DatabaseSerializable {
     @Override
     public int hashCode() {
         return Objects.hash(voteId, player, party, election);
-    }
-
-    public void delete() {
-        Getters.database().deleteVote(this);
     }
 }

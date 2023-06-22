@@ -59,8 +59,8 @@ public class PartiesMenu extends PaginatedGui {
     public void setup() {
         Bukkit.getScheduler().runTask(plugin, () -> {
             this.setDefaultClickAction(e -> e.setCancelled(true));
-            this.setItem(3,3, ItemBuilder.from(Material.ARROW).name(Messages.component(false,"guis", "back")).asGuiItem(e -> this.previous()));
-            this.setItem(3,7, ItemBuilder.from(Material.ARROW).name(Messages.component(false,"guis", "next")).asGuiItem(e -> this.next()));
+            this.setItem(3, 3, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "back")).asGuiItem(e -> this.previous()));
+            this.setItem(3, 7, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "next")).asGuiItem(e -> this.next()));
 
             if (owner.hasPermission("elections.party.create")) {
                 this.setItem(3, 5, ItemBuilder.from(Objects.requireNonNull(XMaterial.STONE_BUTTON.parseItem()))
@@ -68,7 +68,7 @@ public class PartiesMenu extends PaginatedGui {
                         .lore(Messages.component(false, "guis", "create-party-lore"))
                         .asGuiItem(e -> {
                             e.getWhoClicked().closeInventory();
-                            ConversationUtil.createConversation(plugin,new CreatePartyConversation(owner,plugin));
+                            ConversationUtil.createConversation(plugin, new CreatePartyConversation(owner, plugin));
                         }));
             }
 
@@ -77,14 +77,14 @@ public class PartiesMenu extends PaginatedGui {
             for (Party party : parties) {
                 SkullBuilder item = ItemBuilder.skull()
                         .name(Component.text("§9" + party.getName()))
-                        .lore(canEdit(owner,party) ? Messages.component(false, "guis", "edit-party") : Messages.component(false, "guis", "no-edit-party"));
+                        .lore(canEdit(owner, party) ? Messages.component(false, "guis", "edit-party") : Messages.component(false, "guis", "no-edit-party"));
 
                 item.owner(Bukkit.getOfflinePlayer(party.getOwner()));
 
                 if (party.getIcon() != null)
                     item.texture(party.getIcon());
 
-                this.addItem(item.asGuiItem(e -> new EditPartyMenu(owner,party,item,plugin).setup()));
+                this.addItem(item.asGuiItem(e -> new EditPartyMenu(owner, party, item, plugin).setup()));
 
             }
 

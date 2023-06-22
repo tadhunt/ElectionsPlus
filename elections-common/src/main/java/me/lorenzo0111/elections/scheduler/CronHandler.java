@@ -88,11 +88,11 @@ public class CronHandler {
                 .build();
 
         CronTrigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity(job.getName(),"elections")
+                .withIdentity(job.getName(), "elections")
                 .withSchedule(CronScheduleBuilder.cronSchedule(expression))
                 .build();
 
-        scheduler.scheduleJob(jobDetail,trigger);
+        scheduler.scheduleJob(jobDetail, trigger);
         scheduler.start();
         JOBS.add(job);
     }

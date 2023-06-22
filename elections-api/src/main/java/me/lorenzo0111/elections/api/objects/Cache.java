@@ -26,12 +26,12 @@ package me.lorenzo0111.elections.api.objects;
 
 import java.util.Map;
 
-public interface Cache<K,V> {
+public interface Cache<K, V> {
     int size();
     void reset();
     void add(K key, V value);
     boolean remove(K key, V value);
     V remove(K key);
     V get(K key);
-    Map<K,V> map();
+    Map<K, V> map();
 }

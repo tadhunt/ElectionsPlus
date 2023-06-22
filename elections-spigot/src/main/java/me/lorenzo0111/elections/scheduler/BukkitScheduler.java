@@ -39,6 +39,6 @@ public class BukkitScheduler extends me.lorenzo0111.pluginslib.scheduler.BukkitS
 
     @Override
     public void repeating(Runnable runnable, long delayTicks, int time, TimeUnit unit) {
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin,runnable,delayTicks,unit.toSeconds(time) * 20L);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, runnable, delayTicks, unit.toSeconds(time) * 20L);
     }
 }

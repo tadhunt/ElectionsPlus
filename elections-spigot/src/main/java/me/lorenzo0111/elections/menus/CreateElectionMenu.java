@@ -49,7 +49,7 @@ public class CreateElectionMenu extends BaseGui {
     private final List<Party> parties = new ArrayList<>();
 
     public CreateElectionMenu(ElectionsPlus plugin, String name, Player player) {
-        super(5, Messages.componentString(false,"guis", "create"), EnumSet.noneOf(InteractionModifier.class));
+        super(5, Messages.componentString(false, "guis", "create"), EnumSet.noneOf(InteractionModifier.class));
 
         this.name = name;
         this.player = player;
@@ -62,19 +62,19 @@ public class CreateElectionMenu extends BaseGui {
         this.setDefaultClickAction((e) -> e.setCancelled(true));
 
         GuiItem nameItem = ItemBuilder.from(Material.BOOK)
-                .name(Messages.component(false,Messages.single("name", name), "guis", "current-name"))
-                .lore(Messages.component(false,"guis", "edit-name"))
+                .name(Messages.component(false, Messages.single("name", name), "guis", "current-name"))
+                .lore(Messages.component(false, "guis", "edit-name"))
                 .asGuiItem(e -> {
                     e.getWhoClicked().closeInventory();
-                    ConversationUtil.createConversation(plugin,new NameConversation(player,plugin,this));
+                    ConversationUtil.createConversation(plugin, new NameConversation(player, plugin, this));
                 });
 
         GuiItem close = ItemBuilder.from(Material.BARRIER)
-                .name(Messages.component(false,"guis", "cancel"))
+                .name(Messages.component(false, "guis", "cancel"))
                 .asGuiItem(e -> e.getWhoClicked().closeInventory());
 
         GuiItem save = ItemBuilder.from(Material.EMERALD_BLOCK)
-                .name(Messages.component(false,"guis", "save"))
+                .name(Messages.component(false, "guis", "save"))
                 .lore(Messages.component(false, "guis", "save-lore"))
                 .asGuiItem(e -> {
                     e.getWhoClicked().closeInventory();
@@ -92,13 +92,13 @@ public class CreateElectionMenu extends BaseGui {
                 });
 
 
-        this.setItem(5,5, close);
-        this.setItem(5,6, nameItem);
-        this.setItem(5,9, save);
+        this.setItem(5, 5, close);
+        this.setItem(5, 6, nameItem);
+        this.setItem(5, 9, save);
 
-        this.setItem(2,2, ItemBuilder.from(Objects.requireNonNull(XMaterial.STONE_BUTTON.parseItem()))
-                .name(Messages.component(false, "guis","add-name"))
-                .lore(Messages.component(false, "guis","add-lore"))
+        this.setItem(2, 2, ItemBuilder.from(Objects.requireNonNull(XMaterial.STONE_BUTTON.parseItem()))
+                .name(Messages.component(false, "guis", "add-name"))
+                .lore(Messages.component(false, "guis", "add-lore"))
                 .asGuiItem(e -> {
                     e.getWhoClicked().closeInventory();
                     Messages.send(e.getWhoClicked(), true, "loading");

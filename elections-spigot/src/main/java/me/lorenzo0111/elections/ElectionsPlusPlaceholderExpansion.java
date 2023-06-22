@@ -112,7 +112,7 @@ public class ElectionsPlusPlaceholderExpansion extends PlaceholderExpansion {
 
         if (params.startsWith("voted_")) {
             String name = params.split("voted_")[1];
-            Vote vote = plugin.getCache().getVotes().get(name+"||"+player.getUniqueId());
+            Vote vote = plugin.getCache().getVotes().get(name + "||" + player.getUniqueId());
 
             return vote != null ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
 

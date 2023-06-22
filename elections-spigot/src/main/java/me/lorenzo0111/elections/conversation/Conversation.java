@@ -50,7 +50,7 @@ public abstract class Conversation extends StringPrompt {
     @NotNull
     @Override
     public String getPromptText(@NotNull ConversationContext context) {
-        Map<String,String> placeholders = Messages.single("prompt", reason);
+        Map<String, String> placeholders = Messages.single("prompt", reason);
 
         return Messages.componentString(false, placeholders, "prompt");
     }

@@ -61,22 +61,22 @@ public class EditPartyMenu extends BaseGui {
         this.setDefaultClickAction((e) -> e.setCancelled(true));
 
         this.setItem(2, 5, item.lore(Component.empty()).asGuiItem());
-        this.setItem(4,3, ItemBuilder.from(Material.BARRIER).name(Messages.component(false, "guis", "delete")).lore(Messages.component(false, "guis", "delete-party-lore")).asGuiItem(e -> {
+        this.setItem(4, 3, ItemBuilder.from(Material.BARRIER).name(Messages.component(false, "guis", "delete")).lore(Messages.component(false, "guis", "delete-party-lore")).asGuiItem(e -> {
             e.getWhoClicked().closeInventory();
             if (party.getOwner().equals(owner.getUniqueId())) {
                 plugin.getManager()
                         .deleteParty(party);
-                Messages.send(e.getWhoClicked(),true, "parties", "deleted");
+                Messages.send(e.getWhoClicked(), true, "parties", "deleted");
                 return;
             }
 
-            Messages.send(e.getWhoClicked(),true, "parties", "no-permission-delete");
+            Messages.send(e.getWhoClicked(), true, "parties", "no-permission-delete");
         }));
-        this.setItem(4,5, ItemBuilder
+        this.setItem(4, 5, ItemBuilder
                 .from(Objects.requireNonNull(XMaterial.OAK_SIGN.parseItem()))
                 .name(Messages.component(false, "guis", "members"))
-                .lore(Messages.component(false,"guis","members-lore"), Messages.component(false, "guis", "refresh"))
-                .asGuiItem(e -> new MembersMenu(plugin,party,owner).setup()));
+                .lore(Messages.component(false, "guis", "members-lore"), Messages.component(false, "guis", "refresh"))
+                .asGuiItem(e -> new MembersMenu(plugin, party, owner).setup()));
 
         GuiItem item;
 
@@ -86,7 +86,7 @@ public class EditPartyMenu extends BaseGui {
                     .lore(Messages.component(false, "guis", "icon-lore"), Messages.component(false, "guis", "icon-lore2"))
                     .asGuiItem(e -> {
                     e.getWhoClicked().closeInventory();
-                    ConversationUtil.createConversation(plugin,new IconConversation(this,party,owner,plugin));
+                    ConversationUtil.createConversation(plugin, new IconConversation(this, party, owner, plugin));
                 });
         } else {
             item = ItemBuilder.from(Material.BARRIER)

@@ -29,8 +29,8 @@ import me.lorenzo0111.elections.api.objects.Cache;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapCache<K,V> implements Cache<K,V> {
-    private final Map<K,V> map = new HashMap<>();
+public class MapCache<K, V> implements Cache<K, V> {
+    private final Map<K, V> map = new HashMap<>();
 
     @Override
     public int size() {

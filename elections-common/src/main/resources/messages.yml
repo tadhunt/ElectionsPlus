@@ -4,7 +4,7 @@
 prompt: "<gray><prompt>"
 prefix: "<dark_gray>[<yellow>Elections<blue>+<dark_gray>] <reset>"
 open: "<green>Open"
-close: "<red>Close"
+close: "<red>Closed"
 loading: "Loading..."
 join: "<gray>There is currently an election open. <click:run_command:/elections list>Click here to vote</click>"
 
@@ -135,6 +135,7 @@ help:
   close:      "<blue>elections close <name> <gray>» Close an election"
   proceed:    "<blue>elections proceed <name> <gray>» Calculate the election winner"
   vote-block: "<blue>elections vote-block create|delete <gray>» Toggles the block at crosshairs opening the voting menu"
+  holo:       "<blue>election holo create <name> \"<line1>\" [...] | delete <name> | list | refresh <gray>» hologram tools"
 
 
 plugin:

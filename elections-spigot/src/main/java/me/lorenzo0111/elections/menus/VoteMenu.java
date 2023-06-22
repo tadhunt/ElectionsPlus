@@ -54,13 +54,13 @@ public class VoteMenu extends PaginatedGui {
     public void setup() {
         this.setDefaultClickAction(e -> e.setCancelled(true));
         this.getFiller().fillBorder(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
-        this.setItem(3,3, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "back")).asGuiItem(e -> this.previous()));
-        this.setItem(3,7, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "next")).asGuiItem(e -> this.next()));
+        this.setItem(3, 3, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "back")).asGuiItem(e -> this.previous()));
+        this.setItem(3, 7, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "next")).asGuiItem(e -> this.next()));
 
         for (Party party : election.getParties()) {
             this.addItem(ItemBuilder.skull()
                     .name(Component.text("§9" + party.getName()))
-                    .lore(Messages.component(false, "guis","vote"))
+                    .lore(Messages.component(false, "guis", "vote"))
                     .texture(party.getIcon())
                     .owner(Bukkit.getOfflinePlayer(party.getOwner()))
                     .asGuiItem(e -> {
@@ -70,12 +70,12 @@ public class VoteMenu extends PaginatedGui {
                                 .vote(e.getWhoClicked().getUniqueId(), party, election)
                                 .thenAccept((b) -> {
                                    if (b) {
-                                       Messages.send(e.getWhoClicked(),true, Messages.multiple("party", party.getName(), "election", election.getName()), "vote", "success");
+                                       Messages.send(e.getWhoClicked(), true, Messages.multiple("party", party.getName(), "election", election.getName()), "vote", "success");
                                        ElectionsPlus.getInstance().holoRefresh();
                                        return;
                                    }
 
-                                    Messages.send(e.getWhoClicked(),true,"vote", "already");
+                                    Messages.send(e.getWhoClicked(), true, "vote", "already");
                                 });
                     }));
         }

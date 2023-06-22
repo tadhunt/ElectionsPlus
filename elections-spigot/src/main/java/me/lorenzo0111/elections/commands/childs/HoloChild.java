@@ -56,7 +56,7 @@ public class HoloChild extends SubCommand implements Listener {
     @Override
     public void handleSubcommand(User<?> sender, String[] args) {
         if (!(sender.player() instanceof Player)) {
-            Messages.send(sender.audience(),true, "errors", "console");
+            Messages.send(sender.audience(), true, "errors", "console");
             return;
         }
         Player player = (Player)sender.player();
@@ -74,12 +74,9 @@ public class HoloChild extends SubCommand implements Listener {
             }
 
             Location location = player.getLocation();
-            String name = a.get(0);
-            String content = a.get(1);
-            ArrayList<String> contents = new ArrayList<String>();
-            contents.add(content);
+            String name = a.remove(0);
 
-            ElectionsHologram hologram = plugin.holoCreate(name, location, contents);
+            ElectionsHologram hologram = plugin.holoCreate(name, location, a);
             if (hologram == null) {
                 Messages.send(sender.audience(), true, "hologram", "create-fail");
                 return;

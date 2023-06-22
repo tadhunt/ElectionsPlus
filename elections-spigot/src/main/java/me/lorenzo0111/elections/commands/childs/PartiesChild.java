@@ -58,7 +58,7 @@ public class PartiesChild extends SubCommand {
     @Override
     public void handleSubcommand(User<?> sender, String[] args) {
         if (!(sender.player() instanceof Player)) {
-            Messages.send(sender.audience(),true, "errors", "console");
+            Messages.send(sender.audience(), true, "errors", "console");
             return;
         }
 

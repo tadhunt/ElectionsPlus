@@ -54,7 +54,7 @@ public class ElectionBlock implements DatabaseSerializable {
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        Map<String,Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<>();
 
         map.put("world", world);
         map.put("location", location);

@@ -32,9 +32,9 @@ import java.io.File;
 import java.util.Map;
 
 public class ConfigUpdater {
-    private final Map<Object[],Object> values;
+    private final Map<Object[], Object> values;
 
-    public ConfigUpdater(Map<Object[],Object> values) {
+    public ConfigUpdater(Map<Object[], Object> values) {
         this.values = values;
     }
 

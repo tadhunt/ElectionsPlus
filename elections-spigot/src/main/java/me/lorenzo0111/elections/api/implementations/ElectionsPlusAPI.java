@@ -49,13 +49,12 @@ public class ElectionsPlusAPI implements IElectionsPlusAPI {
 
     @Override
     public CompletableFuture<List<Vote>> getVotes() {
-        return plugin.getManager()
-                .getVotes();
+        return plugin.getManager().getVotes();
     }
 
     @Override
     public CompletableFuture<Vote> getVote(UUID player, String election, String party) {
-        CompletableFuture<Vote> voteFuture = new CompletableFuture<>();
+        CompletableFuture<Vote> future = new CompletableFuture<>();
 
         plugin.getManager()
                 .getVotes()
@@ -67,10 +66,10 @@ public class ElectionsPlusAPI implements IElectionsPlusAPI {
                             .findFirst()
                             .orElse(null);
 
-                    voteFuture.complete(vote);
+                    future.complete(vote);
                 });
 
-        return voteFuture;
+        return future;
     }
 
     @Override
@@ -106,19 +105,16 @@ public class ElectionsPlusAPI implements IElectionsPlusAPI {
 
     @Override
     public CompletableFuture<List<Election>> getElections() {
-        return plugin.getManager()
-                .getElections();
+        return plugin.getManager().getElections();
     }
 
     @Override
     public CompletableFuture<Boolean> addVote(UUID player, Election election, Party party) {
-        return plugin.getManager()
-                .vote(player,party,election);
+        return plugin.getManager().vote(player, party, election);
     }
 
     @Override
     public CompletableFuture<Boolean> addVote(Vote vote) {
-        return plugin.getManager()
-                .vote(vote);
+        return plugin.getManager().vote(vote);
     }
 }

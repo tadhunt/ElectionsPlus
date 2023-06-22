@@ -46,7 +46,7 @@ public class Party implements DatabaseSerializable {
     }
 
     public Party(String name, UUID owner) {
-        this(name,owner,new ArrayList<>());
+        this(name, owner, new ArrayList<>());
     }
 
     public String getName() {
@@ -104,7 +104,7 @@ public class Party implements DatabaseSerializable {
         UUID owner = UUID.fromString((String) keys.get("owner"));
 
         Type type = new TypeToken<ArrayList<UUID>>() {}.getType();
-        List<UUID> members = new Gson().fromJson((String) keys.get("members"),type);
+        List<UUID> members = new Gson().fromJson((String) keys.get("members"), type);
 
         Party party = new Party(name, owner, members);
         party.setIconWithoutUpdate(icon);
@@ -119,12 +119,14 @@ public class Party implements DatabaseSerializable {
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        Map<String,Object> map = new HashMap<>();
-        map.put("name",name);
-        map.put("owner",owner);
+        Map<String, Object> map = new HashMap<>();
+        map.put("name", name);
+        map.put("owner", owner);
         map.put("members", new Gson().toJson(members));
-        if (icon != null)
+        if (icon != null) {
             map.put("icon", icon);
+        }
+
         return map;
     }
 }

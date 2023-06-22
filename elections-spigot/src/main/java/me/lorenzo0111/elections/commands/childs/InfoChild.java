@@ -76,18 +76,18 @@ public class InfoChild extends SubCommand {
                             .collect(Collectors.toList());
 
                     int total = 0;
-                    Map<String,Integer> voteMap = new HashMap<>();
+                    Map<String, Integer> voteMap = new HashMap<>();
 
                     for (Vote vote : collect) {
                         total++;
 
                         if (!voteMap.containsKey(vote.getParty())) {
-                            voteMap.put(vote.getParty(),1);
+                            voteMap.put(vote.getParty(), 1);
                             continue;
                         }
 
                         Integer voteCount = voteMap.get(vote.getParty());
-                        voteMap.replace(vote.getParty(),voteCount,voteCount+1);
+                        voteMap.replace(vote.getParty(), voteCount, voteCount+1);
                     }
 
                     user.audience().sendMessage(Messages.component(true, "votes", "title"));

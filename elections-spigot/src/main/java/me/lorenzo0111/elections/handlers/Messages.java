@@ -70,7 +70,7 @@ public class Messages {
     }
 
     public static Map<String, String> multiple(String... path) {
-        Map<String,String> map = new HashMap<>();
+        Map<String, String> map = new HashMap<>();
 
         String key = null;
         for (String s : path) {
@@ -89,9 +89,9 @@ public class Messages {
         return map;
     }
 
-    public static Map<String,String> keys(String... keys) {
-        Map<String,String> map = new HashMap<>();
-        Arrays.asList(keys).forEach(k -> map.put(k,get(k)));
+    public static Map<String, String> keys(String... keys) {
+        Map<String, String> map = new HashMap<>();
+        Arrays.asList(keys).forEach(k -> map.put(k, get(k)));
         return map;
     }
 
@@ -99,7 +99,7 @@ public class Messages {
         return Legacy.SERIALIZER.serialize(component(prefix, path));
     }
 
-    public static String componentString(boolean prefix, Map<String,String> placeholders, Object... path) {
+    public static String componentString(boolean prefix, Map<String, String> placeholders, Object... path) {
         return Legacy.SERIALIZER.serialize(component(prefix, placeholders, path));
     }
 
@@ -196,10 +196,10 @@ public class Messages {
     }
 
     public static void send(CommandSender sender, boolean prefix, Object... path) {
-        send(BukkitAudienceManager.audience(sender), prefix, new HashMap<>(),path);
+        send(BukkitAudienceManager.audience(sender), prefix, new HashMap<>(), path);
     }
 
-    public static void send(CommandSender player, boolean prefix, Map<String,String> placeholders, Object... path) {
+    public static void send(CommandSender player, boolean prefix, Map<String, String> placeholders, Object... path) {
         send(BukkitAudienceManager.audience(player), prefix, placeholders, path);
     }
 
@@ -207,7 +207,7 @@ public class Messages {
         send(player, prefix, new HashMap<>(), path);
     }
 
-    public static void send(Audience player, boolean prefix, Map<String,String> placeholders, Object... path) {
+    public static void send(Audience player, boolean prefix, Map<String, String> placeholders, Object... path) {
         player.sendMessage(component(prefix, placeholders, path));
     }
 

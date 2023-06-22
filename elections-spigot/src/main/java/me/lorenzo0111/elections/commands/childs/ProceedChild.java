@@ -76,7 +76,7 @@ public class ProceedChild extends SubCommand {
                             .filter((vote) -> vote.getElection().equalsIgnoreCase(electionName))
                             .collect(Collectors.toList());
 
-                    Map<String,Integer> counts = new HashMap<>();
+                    Map<String, Integer> counts = new HashMap<>();
                     List<String> winners = new ArrayList<>();
                     int winnerVotes = -1;
 

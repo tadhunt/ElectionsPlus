@@ -38,7 +38,7 @@ import java.nio.file.Path;
 public class GlobalMain {
 
     public static void init(@NotNull Path folder) throws ConfigurateException {
-        ConfigExtractor manager = new ConfigExtractor(GlobalMain.class,folder.toFile(),"config.yml");
+        ConfigExtractor manager = new ConfigExtractor(GlobalMain.class, folder.toFile(), "config.yml");
         manager.extract(); // This is fake because the file has already been extracted.
         ConfigurationNode config = manager.toConfigurate();
 
@@ -47,11 +47,11 @@ public class GlobalMain {
         }
 
         JobDataMap map = new JobDataMap();
-        map.put("name", config.node("chron","name").getString());
+        map.put("name", config.node("chron", "name").getString());
 
-        if (config.node("chron","enabled").getBoolean()) {
+        if (config.node("chron", "enabled").getBoolean()) {
             try {
-                CronHandler.schedule(ElectionsTask.class, config.node("chron","syntax").getString(), map);
+                CronHandler.schedule(ElectionsTask.class, config.node("chron", "syntax").getString(), map);
             } catch (SchedulerException e) {
                 e.printStackTrace();
             }

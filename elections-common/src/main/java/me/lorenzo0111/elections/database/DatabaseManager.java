@@ -29,6 +29,7 @@ import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
@@ -57,8 +58,10 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class DatabaseManager implements IDatabaseManager {
+    private Logger logger;
     private ETable votesTable;
     private ETable partiesTable;
     private ETable electionsTable;
@@ -68,14 +71,17 @@ public class DatabaseManager implements IDatabaseManager {
     private final IConnectionHandler connectionHandler;
     private final CacheManager cache;
 
-    public DatabaseManager(IAdvancedScheduler scheduler, CacheManager cache, ConfigurationNode config, IConnectionHandler handler) {
+    public DatabaseManager(Logger logger, IAdvancedScheduler scheduler, CacheManager cache, ConfigurationNode config, IConnectionHandler handler) {
+        this.logger = logger;
         this.connectionHandler = handler;
 
         this.tables(scheduler, cache, config);
         this.cache = cache;
     }
 
-    public DatabaseManager(ConfigurationNode configuration, CacheManager cache, Path directory, IAdvancedScheduler scheduler) throws SQLException {
+    public DatabaseManager(Logger logger, ConfigurationNode configuration, CacheManager cache, Path directory, IAdvancedScheduler scheduler) throws SQLException {
+        this.logger = logger;
+
         HikariConfig config = new HikariConfig();
 
         config.setMaximumPoolSize(10);
@@ -85,12 +91,12 @@ public class DatabaseManager implements IDatabaseManager {
 
         config.setPoolName("MultiLang MySQL Connection Pool");
         config.setDataSourceClassName("com.mysql.cj.jdbc.Driver");
-        config.addDataSourceProperty("serverName", configuration.node("database","ip").getString());
-        config.addDataSourceProperty("port", configuration.node("database","port").getString());
-        config.addDataSourceProperty("databaseName", configuration.node("database","database").getString());
-        config.addDataSourceProperty("user", configuration.node("database","username").getString());
-        config.addDataSourceProperty("password", configuration.node("database","password").getString());
-        config.addDataSourceProperty("useSSL", configuration.node("database","ssl").getString());
+        config.addDataSourceProperty("serverName", configuration.node("database", "ip").getString());
+        config.addDataSourceProperty("port", configuration.node("database", "port").getString());
+        config.addDataSourceProperty("databaseName", configuration.node("database", "database").getString());
+        config.addDataSourceProperty("user", configuration.node("database", "username").getString());
+        config.addDataSourceProperty("password", configuration.node("database", "password").getString());
+        config.addDataSourceProperty("useSSL", configuration.node("database", "ssl").getString());
 
         IConnectionHandler handler = null;
 
@@ -212,7 +218,8 @@ public class DatabaseManager implements IDatabaseManager {
         CompletableFuture<List<Election>> future = new CompletableFuture<>();
 
         getParties()
-                .thenAccept((parties) -> getElectionsTable().run(() -> {
+                .thenAccept((allParties) -> getElectionsTable().run(() -> {
+                    logger.severe(String.format("getElections: got %d parties", allParties.size()));
                     try {
                         Statement statement = connectionHandler.getConnection().createStatement();
                         ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s;", getElectionsTable().getName()));
@@ -220,28 +227,33 @@ public class DatabaseManager implements IDatabaseManager {
                         List<Election> elections = new ArrayList<>();
                         Gson gson = new Gson();
                         while (resultSet.next()) {
+                            String name = resultSet.getString("name");
+                            Boolean open = resultSet.getInt("open") != 0;
 
-                            List<Party> addedParties = new ArrayList<>();
+                            List<Party> parties = new ArrayList<>();
                             Type type = new TypeToken<ArrayList<String>>() {}.getType();
-                            List<String> names = new ArrayList<>(gson.fromJson(resultSet.getString("parties"), type));
-                            names.forEach((n) -> parties.stream()
+                            List<String> partyNames = new ArrayList<>(gson.fromJson(resultSet.getString("parties"), type));
+                            partyNames.forEach((n) -> allParties.stream()
                                     .filter((p) -> p.getName().equals(n))
                                     .findFirst()
-                                    .ifPresent(addedParties::add));
+                                    .ifPresent(parties::add));
 
-                            Election election = new Election(resultSet.getString("name"), addedParties,resultSet.getInt("open") == 1);
+                            Election election = new Election(name, parties, open);
 
                             elections.add(election);
                         }
+                        logger.severe(String.format("getElections: got %d elections", elections.size()));
 
                         future.complete(elections);
                     } catch (SQLException e) {
+                        logger.severe("SQL EXCEPTION: " + e.toString());
                         e.printStackTrace();
+                        future.complete(null);
+                    } catch (Exception e) {
+                        logger.severe("EXCEPTION: " + e.toString());
                         future.complete(null);
                     }
                 }));
-
-
 
         return future;
     }
@@ -282,7 +294,7 @@ public class DatabaseManager implements IDatabaseManager {
     public CompletableFuture<Party> createParty(String name, UUID owner) {
         CompletableFuture<Party> partyFuture = new CompletableFuture<>();
 
-        partiesTable.find("name",name)
+        partiesTable.find("name", name)
                 .thenAccept((it) -> {
                     try {
                         if (it.next()) {
@@ -332,24 +344,46 @@ public class DatabaseManager implements IDatabaseManager {
 
     @Override
     public void deleteElection(Election election) {
-        cache.getElections().remove(election.getName());
-        electionsTable.removeWhere("name", election);
+        String name = election.getName();
 
-        String electionName = election.getName();
-        this.getVotes().thenAccept((votes) -> {
-            for (Vote vote : votes) {
-                if (vote.getElection().equals(electionName)) {
-                    vote.delete();
-                }
+        // remove the election from the cache
+        cache.getElections().remove(name);
+
+        // remove all votes for this election from the cache
+        List<Vote> votes = new ArrayList<Vote>();
+        Cache<String, Vote> voteCache = cache.getVotes();
+        for (Vote vote : voteCache.map().values()) {
+            if (vote.getElection().equals(name)) {
+                votes.add(vote);
+            }
+        }
+        for (Vote vote : votes) {
+                voteCache.remove(vote.getCacheKey());
+        }
+
+        // remove the election from the database
+        electionsTable.removeWhere("name", election).thenAccept((electionRemoveResult) -> {
+            if (electionRemoveResult instanceof String) {
+                logger.severe(String.format("deleteElection[%s]: remove election: " + name, (String)electionRemoveResult));
             }
         });
+
+        // remove all votes for this election from the database
+        for (Vote vote : votes) {
+            this.deleteVote(vote).thenAccept((voteRemoveResult) -> {
+                if (voteRemoveResult instanceof String) {
+                    logger.severe(String.format("deleteElection[%s]: remove vote: " + name, (String)voteRemoveResult));
+                }
+            });
+        }
     }
 
     @Override
-    public void deleteVote(Vote vote) {
-        cache.getVotes().remove(vote.getVoteId().toString());
+    public CompletableFuture<?> deleteVote(Vote vote) {
+        cache.getVotes().remove(vote.getCacheKey());
+
         UUID voteId = vote.getVoteId();
-        votesTable.removeWhere("voteId", voteId);
+        return votesTable.removeWhere("voteId", voteId);
     }
 
     @Override
@@ -373,6 +407,7 @@ public class DatabaseManager implements IDatabaseManager {
                     future.complete(votes);
                 } catch (SQLException e) {
                     e.printStackTrace();
+                    future.complete(null);
                 }
         });
 
@@ -401,10 +436,11 @@ public class DatabaseManager implements IDatabaseManager {
                         }
 
                         this.getVotesTable().add(vote);
-                        cache.getVotes().add(vote.getVoteId().toString(), vote);
+                        cache.getVotes().add(vote.getCacheKey(), vote);
                         future.complete(true);
                     } catch (SQLException e) {
                         e.printStackTrace();
+                        future.complete(false);
                     }
                 });
 
