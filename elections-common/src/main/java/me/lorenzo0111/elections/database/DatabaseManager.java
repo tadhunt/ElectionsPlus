@@ -113,7 +113,8 @@ public class DatabaseManager implements IDatabaseManager {
     private void tables(IAdvancedScheduler scheduler, CacheManager cache, ConfigurationNode config) {
         // Votes
         List<Column> votesColumns = new ArrayList<>();
-        votesColumns.add(new Column("uuid", "TEXT"));
+        votesColumns.add(new Column("voteId", "TEXT"));
+        votesColumns.add(new Column("player", "TEXT"));
         votesColumns.add(new Column("party", "TEXT"));
         votesColumns.add(new Column("election", "TEXT"));
         this.votesTable = new ETable(scheduler, connectionHandler, "votes", votesColumns);
@@ -291,7 +292,7 @@ public class DatabaseManager implements IDatabaseManager {
 
                         Party party = new Party(name, owner);
                         partiesTable.add(party);
-                        cache.getParties().add(party.getName(),party);
+                        cache.getParties().add(party.getName(), party);
                         partyFuture.complete(party);
                     } catch (SQLException e) {
                         e.printStackTrace();
@@ -316,8 +317,8 @@ public class DatabaseManager implements IDatabaseManager {
     @Override
     public void updateParty(Party party) {
         cache.getParties().remove(party.getName());
-        cache.getParties().add(party.getName(),party);
-        partiesTable.removeWhere("name",party)
+        cache.getParties().add(party.getName(), party);
+        partiesTable.removeWhere("name", party)
                 .thenRun(() -> partiesTable.add(party));
     }
 
@@ -333,6 +334,22 @@ public class DatabaseManager implements IDatabaseManager {
     public void deleteElection(Election election) {
         cache.getElections().remove(election.getName());
         electionsTable.removeWhere("name", election);
+
+        String electionName = election.getName();
+        this.getVotes().thenAccept((votes) -> {
+            for (Vote vote : votes) {
+                if (vote.getElection().equals(electionName)) {
+                    vote.delete();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void deleteVote(Vote vote) {
+        cache.getVotes().remove(vote.getVoteId().toString());
+        UUID voteId = vote.getVoteId();
+        votesTable.removeWhere("voteId", voteId);
     }
 
     @Override
@@ -345,7 +362,13 @@ public class DatabaseManager implements IDatabaseManager {
                     ResultSet set = statement.executeQuery();
                     List<Vote> votes = new ArrayList<>();
                     while (set.next()) {
-                        votes.add(new Vote(UUID.fromString(set.getString("uuid")),set.getString("party"),set.getString("election")));
+                        UUID voteId = UUID.fromString(set.getString("voteId"));
+                        UUID player = UUID.fromString(set.getString("player"));
+                        String party = set.getString("party");
+                        String election = set.getString("election");
+
+                        Vote vote = new Vote(voteId, player, party, election);
+                        votes.add(vote);
                     }
                     future.complete(votes);
                 } catch (SQLException e) {
@@ -358,7 +381,7 @@ public class DatabaseManager implements IDatabaseManager {
 
     @Override
     public CompletableFuture<Boolean> vote(UUID player, Party party, Election election) {
-        Vote vote = new Vote(player, party.getName(), election.getName());
+        Vote vote = new Vote(UUID.randomUUID(), player, party.getName(), election.getName());
         return this.vote(vote);
     }
 
@@ -367,7 +390,7 @@ public class DatabaseManager implements IDatabaseManager {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
         this.getVotesTable()
-                .find("uuid", vote.getPlayer())
+                .find("player", vote.getPlayer())
                 .thenAccept((set) -> {
                     try {
                         while (set.next()) {
@@ -378,8 +401,7 @@ public class DatabaseManager implements IDatabaseManager {
                         }
 
                         this.getVotesTable().add(vote);
-                        cache.getVotes()
-                                .add(vote.getElection() + "||" + vote.getPlayer(), vote);
+                        cache.getVotes().add(vote.getVoteId().toString(), vote);
                         future.complete(true);
                     } catch (SQLException e) {
                         e.printStackTrace();

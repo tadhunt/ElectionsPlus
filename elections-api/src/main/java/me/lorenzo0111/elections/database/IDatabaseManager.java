@@ -37,19 +37,23 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public interface IDatabaseManager {
-    CompletableFuture<Election> createElection(String name, List<Party> parties);
     void closeConnection() throws SQLException;
+
+    CompletableFuture<Election> createElection(String name, List<Party> parties);
     CompletableFuture<List<Election>> getElections();
+    void updateElection(Election election);
+    void deleteElection(Election election);
+
     CompletableFuture<List<Party>> getParties();
     CompletableFuture<Party> createParty(String name, UUID owner);
     void deleteParty(String name);
     void deleteParty(Party party);
     void updateParty(Party party);
-    void updateElection(Election election);
-    void deleteElection(Election election);
+
     CompletableFuture<List<Vote>> getVotes();
     CompletableFuture<Boolean> vote(UUID player, Party party, Election election);
     CompletableFuture<Boolean> vote(Vote vote);
+    void deleteVote(Vote vote);
 
     CompletableFuture<List<ElectionBlock>> getElectionBlocks();
     CompletableFuture<ElectionBlock> createElectionBlock(UUID world, Map <String, Object> location, String blockData);

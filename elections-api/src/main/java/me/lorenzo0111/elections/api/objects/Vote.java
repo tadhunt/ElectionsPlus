@@ -24,6 +24,7 @@
 
 package me.lorenzo0111.elections.api.objects;
 
+import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,14 +34,24 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class Vote implements DatabaseSerializable {
+    private final UUID voteId;
     private final UUID player;
     private final String party;
     private final String election;
 
-    public Vote(UUID player, String party, String election) {
+    public Vote(UUID voteId, UUID player, String party, String election) {
+        this.voteId = voteId;
         this.player = player;
         this.party = party;
         this.election = election;
+    }
+                        
+    public String getKey() {
+        return getElection() + "||" + getPlayer();
+    }
+
+    public UUID getVoteId() {
+        return voteId;
     }
 
     public String getParty() {
@@ -57,10 +68,11 @@ public class Vote implements DatabaseSerializable {
 
     @Override
     public DatabaseSerializable from(Map<String, Object> keys) {
-        UUID player = UUID.fromString((String) keys.get("uuid"));
+        UUID voteId = UUID.fromString((String) keys.get("voteId"));
+        UUID player = UUID.fromString((String) keys.get("player"));
         String party = (String) keys.get("party");
         String election = (String) keys.get("election");
-        return new Vote(player,party,election);
+        return new Vote(voteId, player, party, election);
     }
 
     @Override
@@ -71,22 +83,35 @@ public class Vote implements DatabaseSerializable {
     @Override
     public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
-        map.put("uuid",player);
-        map.put("party",party);
-        map.put("election",election);
+
+        map.put("voteId", voteId);
+        map.put("player", player);
+        map.put("party", party);
+        map.put("election", election);
+
         return map;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         Vote vote = (Vote) o;
-        return Objects.equals(player, vote.player) && Objects.equals(party, vote.party) && Objects.equals(election, vote.election);
+        return Objects.equals(voteId, vote.voteId) && Objects.equals(player, vote.player) && Objects.equals(party, vote.party) && Objects.equals(election, vote.election);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(player, party, election);
+        return Objects.hash(voteId, player, party, election);
+    }
+
+    public void delete() {
+        Getters.database().deleteVote(this);
     }
 }

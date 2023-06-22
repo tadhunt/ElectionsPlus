@@ -95,12 +95,12 @@ public class ElectionsHologram {
     */
 
     public void refresh() {
-        this.plugin.getElectionsStatus().thenAccept((electionsStatus) -> {
-                this.update(electionsStatus);
+        this.plugin.getElectionStatuses().thenAccept((electionStatuses) -> {
+                this.update(electionStatuses);
         });
     }
                 
-    private void update(Map<String, ElectionStatus> electionsStatus) {
+    private void update(Map<String, ElectionStatus> statuses) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             try {
                 HologramLines holoLines = holo.getLines();
@@ -112,7 +112,7 @@ public class ElectionsHologram {
                         continue;
                     }
 
-                    for (ElectionStatus status : electionsStatus.values()) {
+                    for (ElectionStatus status : statuses.values()) {
                         Election election = status.getElection();
                         Map<String, String> placeholders = Messages.multiple("name", election.getName(), "totalvotes", status.totalVotes().toString());
                         if (election.isOpen()) {

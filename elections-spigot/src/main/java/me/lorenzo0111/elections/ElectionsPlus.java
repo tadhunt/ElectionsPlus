@@ -305,21 +305,21 @@ public final class ElectionsPlus extends JavaPlugin {
             this.holoApi = null;
             return;
         }
-        this.getLogger().info("holograms enabled");
+
+        this.getLogger().info("Holograms enabled");
 
         this.holoApi = HolographicDisplaysAPI.get(this);
 
         this.getManager().getHolograms().thenAccept((dbholos) -> {
-            this.getLogger().warning(String.format("%d db holograms loaded", dbholos.size()));
+            this.getLogger().info(String.format("Initializing %d holograms", dbholos.size()));
             Bukkit.getScheduler().runTask(this, () -> {
                 try {
                     for (DBHologram dbholo : dbholos.values()) {
-                        this.getLogger().warning("db holo: " + dbholo.toJson());
                         ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, dbholo);
                         holograms.put(hologram.getName(), hologram);
                     }
                 } catch (Exception e) {
-                    this.getLogger().warning("holoInit: " + e.toString());
+                    this.getLogger().severe("holoInit: " + e.toString());
                 }
             });
         });
@@ -368,7 +368,7 @@ public final class ElectionsPlus extends JavaPlugin {
         }
     }
 
-    public CompletableFuture<Map<String, ElectionStatus>> getElectionsStatus() {
+    public CompletableFuture<Map<String, ElectionStatus>> getElectionStatuses() {
         CompletableFuture<Map<String, ElectionStatus>> future = new CompletableFuture<>();
 
         this.getManager().getElections().thenAccept((elections) -> {

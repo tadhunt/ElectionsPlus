@@ -44,12 +44,12 @@ public class MapCache<K,V> implements Cache<K,V> {
 
     @Override
     public void add(K key, V value) {
-        map.put(key,value);
+        map.put(key, value);
     }
 
     @Override
     public boolean remove(K key, V value) {
-        return map.remove(key,value);
+        return map.remove(key, value);
     }
 
     @Override

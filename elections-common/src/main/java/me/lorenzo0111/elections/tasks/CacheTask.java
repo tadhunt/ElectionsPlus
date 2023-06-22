@@ -41,19 +41,19 @@ public class CacheTask implements Runnable {
         database.getParties()
                 .thenAccept((parties) -> {
                     cache.getParties().reset();
-                    parties.forEach(party -> cache.getParties().add(party.getName(),party));
+                    parties.forEach(party -> cache.getParties().add(party.getName(), party));
                 });
 
         database.getElections()
                 .thenAccept((elections) -> {
                     cache.getElections().reset();
-                    elections.forEach(election -> cache.getElections().add(election.getName(),election));
+                    elections.forEach(election -> cache.getElections().add(election.getName(), election));
                 });
 
         database.getVotes()
                 .thenAccept((votes) -> {
                     cache.getVotes().reset();
-                    votes.forEach(vote -> cache.getVotes().add(vote.getElection()+"||"+vote.getPlayer(),vote));
+                    votes.forEach(vote -> cache.getVotes().add(vote.getVoteId().toString(), vote));
                 });
     }
 
