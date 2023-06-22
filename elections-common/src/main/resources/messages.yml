@@ -135,8 +135,7 @@ help:
   close:      "<blue>elections close <name> <gray>» Close an election"
   proceed:    "<blue>elections proceed <name> <gray>» Calculate the election winner"
   vote-block: "<blue>elections vote-block create|delete <gray>» Toggles the block at crosshairs opening the voting menu"
-  holo:       "<blue>election holo create <name> \"<line1>\" [...] | delete <name> | list | refresh <gray>» hologram tools"
-
+  holo:       "<blue>election holo create <name> \"<line 1>\" [\"line 2\"]..." | delete <name> | list | refresh <gray>» hologram tools"
 
 plugin:
   reload: "<gray>Plugin reloaded in <yellow><elapsed>ms<gray> with <yellow><errors><gray> error(s)."
