@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import me.lorenzo0111.elections.api.objects.Election;
+import me.lorenzo0111.elections.api.objects.Party;
 
 public class ElectionStatus {
     private Election election;
@@ -37,6 +38,9 @@ public class ElectionStatus {
         this.election = election;
         this.totalVotes = 0;
         this.partyVotes = new HashMap<String, Integer>();
+        for (Party party : election.getParties()) {
+            this.partyVotes.put(party.getName(), 0);
+        }
     }
 
     @Override

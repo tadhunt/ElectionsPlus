@@ -68,7 +68,7 @@ public class HoloChild extends SubCommand implements Listener {
 
         if (args[1].equalsIgnoreCase("create")) {
             ArrayList<String> a = plugin.unquote(args, 2);
-            if (a.size() != 2) {
+            if (a.size() < 2) {
                 Messages.send(sender.audience(), true, "errors", "bad-args");
                 return;
             }

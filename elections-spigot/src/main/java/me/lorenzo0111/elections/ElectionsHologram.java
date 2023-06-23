@@ -100,9 +100,12 @@ public class ElectionsHologram {
                         Election election = status.getElection();
                         Map<String, String> placeholders = Messages.multiple("name", election.getName(), "totalvotes", status.getTotalVotes().toString());
                         if (election.isOpen()) {
+                            placeholders.put("state", Messages.get("open"));
                             holoLines.appendText(Messages.componentString(false, placeholders, "hologram-status", "open"));
                             continue;
                         }
+
+                        placeholders.put("state", Messages.get("closed"));
 
                         Map<String, Integer> winners = status.winners();
                         if (winners == null || winners.size() == 0) {

@@ -105,7 +105,15 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             new ElectionsPlusPlaceholderExpansion(this).register();
         }
 
-        this.holoInit();
+        if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
+            this.getLogger().info("holograms disabled: HolograpicDisplays plugin not enabled");
+            this.holoApi = null;
+            return;
+        }
+
+        this.holoApi = HolographicDisplaysAPI.get(this);
+
+        this.getLogger().info("Holograms enabled");
     }
 
     @Override
@@ -129,7 +137,36 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
     }
 
     // called by CacheTask every time the cache is reloaded
-    public void onCacheInitialized() {
+    public void onCacheReloaded() {
+        if (this.holoApi == null) {
+            // holograms api not enabled
+            return;
+        }
+
+        if (this.holograms == null) {
+            // first time: create holograms
+
+            this.holograms = new HashMap<String, ElectionsHologram>();
+
+            this.getManager().getHolograms().thenAccept((dbholos) -> {
+                this.getLogger().info(String.format("Initializing %d holograms", dbholos.size()));
+                Bukkit.getScheduler().runTask(this, () -> {
+                    try {
+                        for (DBHologram dbholo : dbholos.values()) {
+                            ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, dbholo);
+                            holograms.put(hologram.getName(), hologram);
+                        }
+                    } catch (Exception e) {
+                        this.getLogger().severe("holoInit: " + e.toString());
+                    }
+                });
+            });
+
+            return;
+        }
+
+        // subsequent updates: refresh
+
         this.holoRefresh();
     }
 
@@ -301,34 +338,6 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
 
         return results;
-    }
-
-    private void holoInit() {
-        this.holograms = new HashMap<String, ElectionsHologram>();
-
-        if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
-            this.getLogger().info("holograms disabled: HolograpicDisplays plugin not enabled");
-            this.holoApi = null;
-            return;
-        }
-
-        this.getLogger().info("Holograms enabled");
-
-        this.holoApi = HolographicDisplaysAPI.get(this);
-
-        this.getManager().getHolograms().thenAccept((dbholos) -> {
-            this.getLogger().info(String.format("Initializing %d holograms", dbholos.size()));
-            Bukkit.getScheduler().runTask(this, () -> {
-                try {
-                    for (DBHologram dbholo : dbholos.values()) {
-                        ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, dbholo);
-                        holograms.put(hologram.getName(), hologram);
-                    }
-                } catch (Exception e) {
-                    this.getLogger().severe("holoInit: " + e.toString());
-                }
-            });
-        });
     }
 
     public ElectionsHologram holoCreate(String name, Location location, List<String> contents) {

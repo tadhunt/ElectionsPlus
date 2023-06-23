@@ -25,5 +25,5 @@
 package me.lorenzo0111.elections.api.objects;
 
 public interface CacheEventHandler {
-    void onCacheInitialized();
+    void onCacheReloaded();
 }

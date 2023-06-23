@@ -72,8 +72,7 @@ public class CacheTask implements Runnable {
                 });
 
         reloaded.thenAccept((result) -> {
-            cache.getEventHandler().onCacheInitialized();
+            cache.getEventHandler().onCacheReloaded();
         });
     }
-
 }

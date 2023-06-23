@@ -80,10 +80,13 @@ public class InfoChild extends SubCommand {
         user.audience().sendMessage(Messages.component(true, calcPlaceholders, "votes", "title1"));
         user.audience().sendMessage(Messages.component(true, "votes", "title2"));
 
-        Integer total = status.getTotalVotes();
         Map<String, Integer> votes = status.getPartyVotes();
-        Map<String, Integer> winners = status.winners();
+        if (votes.size() == 0) {
+            user.audience().sendMessage(Messages.component(true, "votes", "status-no-parties"));
+            return;
+        }
 
+        Map<String, Integer> winners = status.winners();
         String winText = "";
         switch (winners.size()) {
         case 0:
@@ -96,6 +99,7 @@ public class InfoChild extends SubCommand {
             break;
         }
 
+        Integer total = status.getTotalVotes();
         for(String partyName : votes.keySet()) {
             Integer nvotes = votes.get(partyName);
             Integer percent = nvotes * 100 / total;
@@ -115,10 +119,10 @@ public class InfoChild extends SubCommand {
             placeholders.put("state", Messages.get("closed"));
 
             if (winners.get(partyName) == null) {
-                user.audience().sendMessage(Messages.component(false, placeholders, "votes", "status-closed"));
+                user.audience().sendMessage(Messages.component(true, placeholders, "votes", "status-closed"));
             } else {
                 placeholders.put("winner", winText);
-                user.audience().sendMessage(Messages.component(false, placeholders, "votes", "status-closed-winner"));
+                user.audience().sendMessage(Messages.component(true, placeholders, "votes", "status-closed-winner"));
             }
         }
     }
