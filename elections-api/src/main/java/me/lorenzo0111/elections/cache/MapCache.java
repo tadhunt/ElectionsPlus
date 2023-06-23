@@ -26,11 +26,11 @@ package me.lorenzo0111.elections.cache;
 
 import me.lorenzo0111.elections.api.objects.Cache;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class MapCache<K, V> implements Cache<K, V> {
-    private final Map<K, V> map = new HashMap<>();
+    private final Map<K, V> map = new ConcurrentHashMap<>();
 
     @Override
     public int size() {

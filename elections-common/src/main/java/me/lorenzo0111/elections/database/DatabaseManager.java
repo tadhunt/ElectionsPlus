@@ -219,7 +219,6 @@ public class DatabaseManager implements IDatabaseManager {
 
         getParties()
                 .thenAccept((allParties) -> getElectionsTable().run(() -> {
-                    logger.severe(String.format("getElections: got %d parties", allParties.size()));
                     try {
                         Statement statement = connectionHandler.getConnection().createStatement();
                         ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s;", getElectionsTable().getName()));
@@ -242,7 +241,6 @@ public class DatabaseManager implements IDatabaseManager {
 
                             elections.add(election);
                         }
-                        logger.severe(String.format("getElections: got %d elections", elections.size()));
 
                         future.complete(elections);
                     } catch (SQLException e) {

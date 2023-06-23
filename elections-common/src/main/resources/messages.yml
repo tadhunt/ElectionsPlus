@@ -4,7 +4,7 @@
 prompt: "<gray><prompt>"
 prefix: "<dark_gray>[<yellow>Elections<blue>+<dark_gray>] <reset>"
 open: "<green>Open"
-close: "<red>Closed"
+closed: "<red>Closed"
 loading: "Loading..."
 join: "<gray>There is currently an election open. <click:run_command:/elections list>Click here to vote</click>"
 
@@ -45,12 +45,14 @@ guis:
   cancel: "<red>Cancel"
   save: "<green>Save"
   delete: "<red>Delete"
+
   # Add party to election
   add: "<yellow><#B4684D>Left click<gray> to add"
   remove: "<yellow><#B4684D>Right click<gray> to remove"
   added: " <dark_gray>[<green>ADDED<gray>]"
   party-added: "<blue><name> <dark_gray>[<green>ADDED<gray>]"
   add-party: "<blue><bold>» <gray><name> <blue><bold>» <gray>Add Party"
+
   # Create election
   create: "<blue><bold>» <gray>Create Election"
   current-name: "<gray>Current Name: <yellow><name>"
@@ -58,6 +60,7 @@ guis:
   save-lore: "<gray>Click to save and create election"
   add-name: "<green>Add Parties"
   add-lore: "<gray>Click to add parties to the election"
+
   # Edit party
   edit-party-title: "<blue><bold>» <gray>Parties <blue><bold>» <gray><name>"
   delete-party-lore: "<gray>Click to delete the party"
@@ -70,12 +73,14 @@ guis:
   no-icon: "<red>You can't edit the icon"
   no-icon-description: "<gray>You don't have the permission"
   no-icon-description2: "<gray>to set the item icon"
+
   # Elections
   elections: "<blue><bold>» <gray>Elections"
   state: "<gray>State: <state>"
   vote: "<gray>Click to vote"
   close-election: "<gray>Right click to close"
   delete-election: "<gray>Right click to delete"
+
   # Members
   members-title: "<blue><bold>» <gray><name> <blue><bold>» <gray>Members"
   add-member: "<green>Add Member"
@@ -157,5 +162,5 @@ hologram:
 hologram-status:
   open:             "<yellow><name><gray> » <yellow>Open<gray> » <yellow><totalvotes> <gray>votes cast so far."
   closed-no-winner: "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. No winner."
-  closed-winner :   "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Winner <yellow><party><gray>."
-  closed-tie:       "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Tie <yellow><parties><gray>."
+  closed-winner :   "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Winner <yellow><party><gray>!"
+  closed-tie:       "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Tie between <yellow><parties><gray>!"

@@ -370,13 +370,11 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     public void holoRefresh() {
         try {
-            this.getLogger().warning("refreshing holograms");
             for (ElectionsHologram holo : holograms.values()) {
-                this.getLogger().warning("refreshing hologram " + holo.getName());
                 holo.refresh();
             }
         } catch(Exception e) {
-            this.getLogger().severe("EXCEPTION: " + e.toString());
+            this.getLogger().severe("holoRefresh: EXCEPTION: " + e.toString());
         }
     }
 
@@ -388,7 +386,6 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             this.getLogger().severe("getElectionStatuses: null elections");
             return statuses;
         }
-        this.getLogger().info(String.format("getElectionStatuses: got %d elections", elections.size()));
 
         for (Election election : elections.map().values()) {
             statuses.put(election.getName(), new ElectionStatus(election));
@@ -400,7 +397,6 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             return statuses;
         }
 
-        this.getLogger().severe(String.format("getElectionStatuses: got %d votes", votes == null ? -1 : votes.size()));
         for (Vote vote : votes.map().values()) {
             String electionName = vote.getElection();
             String partyName = vote.getParty();
