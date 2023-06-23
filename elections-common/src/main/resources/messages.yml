@@ -5,6 +5,8 @@ prompt: "<gray><prompt>"
 prefix: "<dark_gray>[<yellow>Elections<blue>+<dark_gray>] <reset>"
 open: "<green>Open"
 closed: "<red>Closed"
+winner: "<green>Winner"
+tie: "<green>Tie"
 loading: "Loading..."
 join: "<gray>There is currently an election open. <click:run_command:/elections list>Click here to vote</click>"
 
@@ -108,10 +110,12 @@ proceed:
 # Used for the /elections info <name>
 votes:
   election-name: "<red>Insert a valid election name."
-  calculating: "<gray>Calculating votes for <yellow><election><gray>..."
-  title: "<dark_gray><st>=============</st><yellow> Votes <dark_gray><st>============="
+  title1: "<gray>Election <yellow><election> <gray>» State <state><gray>"
+  title2: "<dark_gray><st>=============</st><yellow> Votes <dark_gray><st>============="
   name: "votes"
-  status: "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>)"
+  status-open:          "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>)"
+  status-closed:        "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>)."
+  status-closed-winner: "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>). <winner><gray>!"
 
 election:
   deleted: "<gray>Election <yellow><name><gray> deleted."
@@ -161,6 +165,6 @@ hologram:
 
 hologram-status:
   open:             "<yellow><name><gray> » <yellow>Open<gray> » <yellow><totalvotes> <gray>votes cast so far."
-  closed-no-winner: "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. No winner."
-  closed-winner :   "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Winner <yellow><party><gray>!"
-  closed-tie:       "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Tie between <yellow><parties><gray>!"
+  closed-no-winner: "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. <yellow>No winner."
+  closed-winner :   "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Winner <green><party><gray>!"
+  closed-tie:       "<yellow><name><gray> » <yellow>Closed<gray> » <yellow><totalvotes> <gray>votes cast. Tie between <green><parties><gray>!"

@@ -412,4 +412,10 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
         return statuses;
     }
+
+    public ElectionStatus getElectionStatus(String electionName) {
+        Map<String, ElectionStatus> statuses = this.getElectionStatuses();
+
+        return statuses.get(electionName);
+    }
 }

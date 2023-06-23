@@ -98,7 +98,7 @@ public class ElectionsHologram {
 
                     for (ElectionStatus status : statuses.values()) {
                         Election election = status.getElection();
-                        Map<String, String> placeholders = Messages.multiple("name", election.getName(), "totalvotes", status.totalVotes().toString());
+                        Map<String, String> placeholders = Messages.multiple("name", election.getName(), "totalvotes", status.getTotalVotes().toString());
                         if (election.isOpen()) {
                             holoLines.appendText(Messages.componentString(false, placeholders, "hologram-status", "open"));
                             continue;

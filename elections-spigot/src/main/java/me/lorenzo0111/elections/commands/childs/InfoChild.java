@@ -24,8 +24,8 @@
 
 package me.lorenzo0111.elections.commands.childs;
 
+import me.lorenzo0111.elections.ElectionStatus;
 import me.lorenzo0111.elections.ElectionsPlus;
-import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.pluginslib.audience.User;
 import me.lorenzo0111.pluginslib.command.ICommand;
@@ -34,9 +34,7 @@ import me.lorenzo0111.pluginslib.command.annotations.Permission;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class InfoChild extends SubCommand {
 
@@ -66,42 +64,62 @@ public class InfoChild extends SubCommand {
         }
         String electionName = a.get(0);
 
-        user.audience().sendMessage(Messages.component(true, Messages.single("election", electionName), "votes", "calculating"));
+        ElectionStatus status = plugin.getElectionStatus(electionName);
+        if (status == null) {
+            user.audience().sendMessage(Messages.component(true, Messages.single("name", electionName), "errors", "election-not-found"));
+            return;
+        }
 
-        plugin.getApi()
-                .getVotes()
-                .thenAccept((votes) -> {
-                    List<Vote> collect = votes.stream()
-                            .filter(vote -> vote.getElection().equalsIgnoreCase(electionName))
-                            .collect(Collectors.toList());
+        Map<String, String> calcPlaceholders = Messages.single("election", electionName);
+        if (status.getElection().isOpen()) {
+            calcPlaceholders.put("state", Messages.get("open"));
+        } else {
+            calcPlaceholders.put("state", Messages.get("closed"));
+        }
 
-                    int total = 0;
-                    Map<String, Integer> voteMap = new HashMap<>();
+        user.audience().sendMessage(Messages.component(true, calcPlaceholders, "votes", "title1"));
+        user.audience().sendMessage(Messages.component(true, "votes", "title2"));
 
-                    for (Vote vote : collect) {
-                        total++;
+        Integer total = status.getTotalVotes();
+        Map<String, Integer> votes = status.getPartyVotes();
+        Map<String, Integer> winners = status.winners();
 
-                        if (!voteMap.containsKey(vote.getParty())) {
-                            voteMap.put(vote.getParty(), 1);
-                            continue;
-                        }
+        String winText = "";
+        switch (winners.size()) {
+        case 0:
+            break;
+        case 1:
+            winText = Messages.get("winner");
+            break;
+        default:
+            winText = Messages.get("tie");
+            break;
+        }
 
-                        Integer voteCount = voteMap.get(vote.getParty());
-                        voteMap.replace(vote.getParty(), voteCount, voteCount+1);
-                    }
+        for(String partyName : votes.keySet()) {
+            Integer nvotes = votes.get(partyName);
+            Integer percent = nvotes * 100 / total;
 
-                    user.audience().sendMessage(Messages.component(true, "votes", "title"));
-                    for (String party : voteMap.keySet()) {
-                        Integer nvotes = voteMap.get(party);
-                        Integer percent = nvotes * 100 / total;
+            HashMap<String, String> placeholders = new HashMap<String, String>();
+            placeholders.put("party", partyName);
+            placeholders.put("nvotes", nvotes.toString());
+            placeholders.put("percent", percent.toString());
 
-                        HashMap<String, String> placeholders = new HashMap<String, String>();
-                        placeholders.put("party", party);
-                        placeholders.put("nvotes", nvotes.toString());
-                        placeholders.put("percent", percent.toString());
+            if (status.getElection().isOpen()) {
+                placeholders.put("state", Messages.get("open"));
 
-                        user.audience().sendMessage(Messages.component(true, placeholders, "votes", "status"));
-                    }
-                });
+                user.audience().sendMessage(Messages.component(true, placeholders, "votes", "status-open"));
+                continue;
+            }
+
+            placeholders.put("state", Messages.get("closed"));
+
+            if (winners.get(partyName) == null) {
+                user.audience().sendMessage(Messages.component(false, placeholders, "votes", "status-closed"));
+            } else {
+                placeholders.put("winner", winText);
+                user.audience().sendMessage(Messages.component(false, placeholders, "votes", "status-closed-winner"));
+            }
+        }
     }
 }

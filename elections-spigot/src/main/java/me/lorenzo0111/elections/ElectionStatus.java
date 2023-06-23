@@ -44,15 +44,15 @@ public class ElectionStatus {
         return String.format("election %s totalVotes %s partyVotes %s", election.getName(), totalVotes, partyVotes.toString());
     }
 
-    Election getElection() {
+    public Election getElection() {
         return election;
     }
 
-    Integer totalVotes() {
+    public Integer getTotalVotes() {
         return totalVotes;
     }
 
-    void addVote(String partyName) {
+    public void addVote(String partyName) {
         Integer partyCount = partyVotes.get(partyName);
         if (partyCount == null) {
             partyCount = 0;
@@ -64,7 +64,11 @@ public class ElectionStatus {
         totalVotes++;
     }
 
-    Map<String, Integer> winners() {
+    public Map<String, Integer> getPartyVotes() {
+        return partyVotes;
+    }
+
+    public Map<String, Integer> winners() {
         Integer maxVotes = 0;
         Map<String, Integer> winners = new HashMap<String, Integer>();
 
