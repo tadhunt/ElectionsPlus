@@ -27,6 +27,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -80,11 +81,11 @@ public class ElectionsHologram {
     }
 
     public void refresh() {
-        Map<String, ElectionStatus> statuses = this.plugin.getElectionStatuses();
+        Map<UUID, ElectionStatus> statuses = this.plugin.getElectionStatuses();
         this.update(statuses);
     }
 
-    private void update(Map<String, ElectionStatus> statuses) {
+    private void update(Map<UUID, ElectionStatus> statuses) {
         Bukkit.getScheduler().runTask(plugin, () -> {
             try {
                 HologramLines holoLines = holo.getLines();
@@ -120,14 +121,13 @@ public class ElectionsHologram {
                             }
                             s += partyName;
                         }
+                        placeholders.put("winner", s);
 
                         if (winners.size() == 1) {
-                            placeholders.put("party", s);
                             holoLines.appendText(Messages.componentString(false, placeholders, "hologram-status", "closed-winner"));
                             continue;
                         }
 
-                        placeholders.put("parties", s);
                         holoLines.appendText(Messages.componentString(false, placeholders, "hologram-status", "closed-tie"));
                     }
                 }

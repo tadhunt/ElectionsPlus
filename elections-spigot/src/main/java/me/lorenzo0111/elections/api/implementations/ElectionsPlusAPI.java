@@ -53,7 +53,7 @@ public class ElectionsPlusAPI implements IElectionsPlusAPI {
     }
 
     @Override
-    public CompletableFuture<Vote> getVote(UUID player, String election, String party) {
+    public CompletableFuture<Vote> getVote(UUID player, UUID electionId, String party) {
         CompletableFuture<Vote> future = new CompletableFuture<>();
 
         plugin.getManager()
@@ -61,7 +61,7 @@ public class ElectionsPlusAPI implements IElectionsPlusAPI {
                 .thenAccept(v -> {
                     Vote vote = v.stream()
                             .filter(f -> f.getPlayer().equals(player))
-                            .filter(f -> f.getElection().equals(election))
+                            .filter(f -> f.getElectionId().equals(electionId))
                             .filter(f -> f.getParty().equals(party))
                             .findFirst()
                             .orElse(null);

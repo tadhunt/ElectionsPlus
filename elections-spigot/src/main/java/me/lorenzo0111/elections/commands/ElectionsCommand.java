@@ -52,7 +52,6 @@ public class ElectionsCommand extends Command implements TabExecutor {
         this.addSubcommand(new ReloadChild(this));
         this.addSubcommand(new InfoChild(this));
         this.addSubcommand(new CloseChild(this, plugin));
-        this.addSubcommand(new ProceedChild(this, plugin));
         this.addSubcommand(new VoteBlockChild(this, plugin));
         this.addSubcommand(new HoloChild(this, plugin));
 

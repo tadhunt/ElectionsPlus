@@ -1,5 +1,7 @@
+#
 # In this file you can use MiniMessage for better colors, click actions and a lot of features
 # Here is the documentation: https://docs.adventure.kyori.net/minimessage.html#format
+#
 
 prompt: "<gray><prompt>"
 prefix: "<dark_gray>[<yellow>Elections<blue>+<dark_gray>] <reset>"
@@ -28,8 +30,10 @@ errors:
   no-block: "<red>No block where your crosshairs are pointing."
   block-already-exists: "<red>The block at that location is already added."
 
-
-# Placeholder: <name>
+#
+# Placeholders
+#   <name> - Party name
+#
 disband:
   deleted: "<gray>Party <yellow><name><gray> deleted."
 
@@ -39,7 +43,9 @@ conversations:
   create: "Write the name of the new party in chat."
   icon: "Write the icon base64 in chat."
 
+#
 # Guis titles
+#
 guis:
   # General
   next: "<gray>Next"
@@ -95,11 +101,21 @@ guis:
   edit-party: "<gray>Click to edit"
   no-edit-party: "<red>You can't edit this party"
 
+#
+# Placeholders
+#   <party> - Party name
+#
 vote:
   title: "<gray>Vote <blue>» <yellow><name>"
   already: "You already voted in this election."
   success: "You voted <party> in election <election>."
 
+#
+# Placeholders
+#   party    - Party name
+#   parties  - Comma separated list of party names
+#   election - Election name
+#
 proceed:
   missing-election-name: "<red>Missing election name."
   no-winner: "<red>No winner yet!"
@@ -107,7 +123,17 @@ proceed:
   multiple-winners: "<gray>The winners are: <yellow><parties><gray>. Run <yellow>/elections info <election><gray> to view the votes."
   tie: "<red>Tie with no winners between <yellow><parties><gray>. Run <yellow>/elections info <election><gray> to view the votes."
 
-# Used for the /elections info <name>
+#
+# Command
+#   /elections info <name>
+#
+# Placeholders
+#   election - The name of the election
+#   state    - Election open / closed
+#   party    - Party Name
+#   nvotes   - Total number of votes for the party.
+#   winner   - the winning party/parties of the election
+#
 votes:
   election-name: "<red>Insert a valid election name."
   title1: "<gray>Election <yellow><election> <gray>» State <state><gray>"
@@ -118,12 +144,24 @@ votes:
   status-closed:        "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>)."
   status-closed-winner: "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>). <winner><gray>!"
 
+#
+# Placeholders
+#   name     - Election name
+#   election - Election name
+#   party    - Party name
+#
 election:
   deleted: "<gray>Election <yellow><name><gray> deleted."
   created: "<gray>Election <yellow><name><gray> created."
   party-added: "<gray>Party <yellow><party><gray> added to election <yellow><election><gray>."
   nochange: "<gray>Election <yellow><election><gray>: no change to apply"
 
+#
+# Placeholders
+#   party  - Party name
+#   name   - Username
+#   member - Username of party member
+#
 parties:
   created: "<gray>Party <yellow><party><gray> created."
   deleted: "<gray>Party deleted. <i>(Refresh may take a few seconds)."
@@ -147,6 +185,11 @@ help:
   vote-block: "<blue>elections vote-block create|delete <gray>» Toggles the block at crosshairs opening the voting menu"
   holo:       "<blue>election holo create <name> \"<line 1>\" [\"line 2\"]... | delete <name> | list | refresh <gray>» hologram tools"
 
+#
+# Placeholders
+#   elapsed - Length of time it took to reload the plugin
+#   errors  - Number of errors loading the plugin
+#
 plugin:
   reload: "<gray>Plugin reloaded in <yellow><elapsed>ms<gray> with <yellow><errors><gray> error(s)."
 
@@ -154,6 +197,11 @@ vote-block:
   created: "<gray>Vote block created."
   deleted: "<gray>Vote block deleted."
 
+#
+# Placeholders
+#   name     - Hologram name
+#   location - Hologram location
+#
 hologram:
   create-fail: "<red>hologram creation failed."
   disabled:    "<red>Holograms disabled: HolographicDisplays plugin not found or disabled."
@@ -164,8 +212,16 @@ hologram:
   refreshed:   "<gray>Holograms refreshed."
   text:        "<gray><text>"
 
+#
+# Placeholders
+#   name       - The name of the election
+#   state      - Election open / closed
+#   totalvotes - Total number of votes cast.
+#   winner     - the winning party/parties of the election
+#
 hologram-status:
   open:             "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes so far."
   closed-no-winner: "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes cast. <yellow>No winner."
-  closed-winner :   "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes cast. Winner <green><party><gray>!"
-  closed-tie:       "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes cast. Tie between <green><parties><gray>!"
+  closed-winner :   "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes cast. Winner <green><winner><white>!"
+  closed-tie:       "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes cast. Tie between <green><winner><white>!"
+

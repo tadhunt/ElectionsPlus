@@ -24,6 +24,8 @@
 
 package me.lorenzo0111.elections.cache;
 
+import java.util.UUID;
+
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.CacheEventHandler;
 import me.lorenzo0111.elections.api.objects.Election;
@@ -33,7 +35,7 @@ import me.lorenzo0111.elections.api.objects.Vote;
 public class CacheManager {
     private final CacheEventHandler eventHandler;
     private final Cache<String, Party> parties;
-    private final Cache<String, Election> elections;
+    private final Cache<UUID, Election> elections;
     private final Cache<String, Vote> votes;
 
     public CacheManager(CacheEventHandler eventHandler) {
@@ -47,7 +49,7 @@ public class CacheManager {
         return parties;
     }
 
-    public Cache<String, Election> getElections() {
+    public Cache<UUID, Election> getElections() {
         return elections;
     }
 

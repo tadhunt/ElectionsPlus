@@ -36,17 +36,17 @@ public class Vote implements DatabaseSerializable {
     private final UUID voteId;
     private final UUID player;
     private final String party;
-    private final String election;
+    private final UUID electionId;
 
-    public Vote(UUID voteId, UUID player, String party, String election) {
+    public Vote(UUID voteId, UUID player, String party, UUID electionId) {
         this.voteId = voteId;
         this.player = player;
         this.party = party;
-        this.election = election;
+        this.electionId = electionId;
     }
 
     public String getCacheKey() {
-        return getElection() + "||" + getPlayer();
+        return electionId.toString() + "||" + player.toString();
     }
 
     public UUID getVoteId() {
@@ -57,8 +57,8 @@ public class Vote implements DatabaseSerializable {
         return party;
     }
 
-    public String getElection() {
-        return election;
+    public UUID getElectionId() {
+        return electionId;
     }
 
     public UUID getPlayer() {
@@ -67,11 +67,12 @@ public class Vote implements DatabaseSerializable {
 
     @Override
     public DatabaseSerializable from(Map<String, Object> keys) {
-        UUID voteId = UUID.fromString((String) keys.get("voteId"));
+        UUID voteId = UUID.fromString((String) keys.get("id"));
         UUID player = UUID.fromString((String) keys.get("player"));
         String party = (String) keys.get("party");
-        String election = (String) keys.get("election");
-        return new Vote(voteId, player, party, election);
+        UUID electionId = UUID.fromString((String) keys.get("electionId"));
+
+        return new Vote(voteId, player, party, electionId);
     }
 
     @Override
@@ -83,10 +84,10 @@ public class Vote implements DatabaseSerializable {
     public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
 
-        map.put("voteId", voteId);
+        map.put("id", voteId);
         map.put("player", player);
         map.put("party", party);
-        map.put("election", election);
+        map.put("electionId", electionId);
 
         return map;
     }
@@ -102,11 +103,11 @@ public class Vote implements DatabaseSerializable {
         }
 
         Vote vote = (Vote) o;
-        return Objects.equals(voteId, vote.voteId) && Objects.equals(player, vote.player) && Objects.equals(party, vote.party) && Objects.equals(election, vote.election);
+        return Objects.equals(voteId, vote.voteId) && Objects.equals(player, vote.player) && Objects.equals(party, vote.party) && Objects.equals(electionId, vote.electionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(voteId, player, party, election);
+        return Objects.hash(voteId, player, party, electionId);
     }
 }

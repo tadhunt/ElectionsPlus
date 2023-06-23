@@ -26,10 +26,12 @@ package me.lorenzo0111.elections;
 
 import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Vote;
 
 import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
@@ -66,22 +68,18 @@ public class ElectionsPlusPlaceholderExpansion extends PlaceholderExpansion {
     @Override
     public String onRequest(OfflinePlayer player, @NotNull String params) {
         if (params.equalsIgnoreCase("info")) {
-            Map<String, Election> elections = plugin.getCache()
-                    .getElections()
-                    .map();
+            Map<UUID, Election> elections = plugin.getCache().getElections().map();
 
             String r = "";
-            //ArrayList<String> results = new ArrayList<String>();
             for (Election election : elections.values()) {
                 if (election.isOpen()) {
                     //results.add(election.getName() + ": open");
-                    r += election.getName() + ": open\n";
+                    r += election.getName() + ": open";
                 } else {
-                    r += election.getName() + ": closed\n";
+                    r += election.getName() + ": closed";
                 }
             }
             return r;
-            //return results.toString();
         }
 
         if (params.equalsIgnoreCase("open")) {
@@ -102,12 +100,15 @@ public class ElectionsPlusPlaceholderExpansion extends PlaceholderExpansion {
 
         if (params.startsWith("isopen_")) {
             String name = params.split("isopen_")[1];
-            Election election = plugin.getCache().getElections().get(name);
+            Cache<UUID, Election> elections = plugin.getCache().getElections();
 
-            if (election == null)
-                return PlaceholderAPIPlugin.booleanFalse();
+            for(Election election : elections.map().values()) {
+                if (election.getName().equals(name)) {
+                    return election.isOpen() ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
+                }
+            }
 
-            return election.isOpen() ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
+            return PlaceholderAPIPlugin.booleanFalse();
         }
 
         if (params.startsWith("voted_")) {

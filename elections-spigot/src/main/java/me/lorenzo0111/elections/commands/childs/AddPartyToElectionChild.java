@@ -117,7 +117,7 @@ public class AddPartyToElectionChild extends SubCommand {
                 }
                 
                 if (dirty) {
-                    Election newElection = new Election(election.getName(), electionParties, election.isOpen());
+                    Election newElection = new Election(election.getId(), election.getName(), electionParties, election.isOpen());
                     plugin.getManager().updateElection(newElection);
                 } else {
                     Messages.send(sender.audience(), true, Messages.single("election", election.getName()), "election", "nochange");

@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
 public interface IElectionsPlusAPI {
     CacheManager getCache();
     CompletableFuture<List<Vote>> getVotes();
-    CompletableFuture<Vote> getVote(UUID player, String election, String party);
+    CompletableFuture<Vote> getVote(UUID player, UUID electionId, String party);
     CompletableFuture<Party> getParty(String name);
     CompletableFuture<Election> getElection(String name);
     CompletableFuture<List<Election>> getElections();

@@ -33,16 +33,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class Election implements DatabaseSerializable {
+    private final UUID id;
     private final String name;
     private final List<Party> parties;
     private boolean open;
 
-    public Election(String name, List<Party> parties, boolean open) {
+    public Election(UUID id, String name, List<Party> parties, boolean open) {
+        this.id = id;
         this.name = name;
         this.parties = parties;
         this.open = open;
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     public String getName() {
@@ -55,8 +62,7 @@ public class Election implements DatabaseSerializable {
 
     public void close() {
         this.open = false;
-        Getters.database()
-                .updateElection(this);
+        Getters.database().updateElection(this);
     }
 
     public boolean isOpen() {
@@ -79,6 +85,7 @@ public class Election implements DatabaseSerializable {
         this.getParties().forEach(p -> parties.add(p.getName()));
 
         Map<String, Object> map = new HashMap<>();
+        map.put("id", id.toString());
         map.put("name", name);
         map.put("parties", new Gson().toJson(parties));
         map.put("open", isOpen() ? 1 : 0);

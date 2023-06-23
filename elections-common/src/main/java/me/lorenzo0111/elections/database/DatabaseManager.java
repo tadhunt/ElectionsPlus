@@ -119,10 +119,10 @@ public class DatabaseManager implements IDatabaseManager {
     private void tables(IAdvancedScheduler scheduler, CacheManager cache, ConfigurationNode config) {
         // Votes
         List<Column> votesColumns = new ArrayList<>();
-        votesColumns.add(new Column("voteId", "TEXT"));
+        votesColumns.add(new Column("id", "TEXT"));
         votesColumns.add(new Column("player", "TEXT"));
         votesColumns.add(new Column("party", "TEXT"));
-        votesColumns.add(new Column("election", "TEXT"));
+        votesColumns.add(new Column("electionId", "TEXT"));
         this.votesTable = new ETable(scheduler, connectionHandler, "votes", votesColumns);
         this.votesTable.create();
 
@@ -137,6 +137,7 @@ public class DatabaseManager implements IDatabaseManager {
 
         // Elections
         List<Column> electionsColumns = new ArrayList<>();
+        electionsColumns.add(new Column("id", "TEXT"));
         electionsColumns.add(new Column("name", "TEXT"));
         electionsColumns.add(new Column("parties", "TEXT"));
         electionsColumns.add(new Column("open", "INTEGER"));
@@ -185,25 +186,24 @@ public class DatabaseManager implements IDatabaseManager {
     public CompletableFuture<Election> createElection(String name, List<Party> parties) {
         CompletableFuture<Election> future = new CompletableFuture<>();
 
-        Election election = new Election(name, parties, true);
+        Election election = new Election(UUID.randomUUID(), name, parties, true);
 
         this.getElectionsTable()
-                .find("name", name)
-                .thenAccept((result) -> {
-                    try {
-                        if (result.next()) {
-                            future.complete(null);
-                            return;
-                        }
-
-                        this.getElectionsTable().add(election);
-                        cache.getElections().add(election.getName(), election);
-                        future.complete(election);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
+            .find("name", name)
+            .thenAccept((result) -> {
+                try {
+                    if (result.next()) {
+                        future.complete(null);
+                        return;
                     }
-                });
 
+                    this.getElectionsTable().add(election);
+                    cache.getElections().add(election.getId(), election);
+                    future.complete(election);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            });
 
         return future;
     }
@@ -226,6 +226,7 @@ public class DatabaseManager implements IDatabaseManager {
                         List<Election> elections = new ArrayList<>();
                         Gson gson = new Gson();
                         while (resultSet.next()) {
+                            UUID id = UUID.fromString(resultSet.getString("id"));
                             String name = resultSet.getString("name");
                             Boolean open = resultSet.getInt("open") != 0;
 
@@ -237,7 +238,7 @@ public class DatabaseManager implements IDatabaseManager {
                                     .findFirst()
                                     .ifPresent(parties::add));
 
-                            Election election = new Election(name, parties, open);
+                            Election election = new Election(id, name, parties, open);
 
                             elections.add(election);
                         }
@@ -334,24 +335,22 @@ public class DatabaseManager implements IDatabaseManager {
 
     @Override
     public void updateElection(Election election) {
-        cache.getElections().remove(election.getName());
-        cache.getElections().add(election.getName(), election);
+        cache.getElections().remove(election.getId());
+        cache.getElections().add(election.getId(), election);
         electionsTable.removeWhere("name", election)
                 .thenRun(() -> electionsTable.add(election));
     }
 
     @Override
     public void deleteElection(Election election) {
-        String name = election.getName();
-
         // remove the election from the cache
-        cache.getElections().remove(name);
+        cache.getElections().remove(election.getId());
 
         // remove all votes for this election from the cache
         List<Vote> votes = new ArrayList<Vote>();
         Cache<String, Vote> voteCache = cache.getVotes();
         for (Vote vote : voteCache.map().values()) {
-            if (vote.getElection().equals(name)) {
+            if (vote.getElectionId().equals(election.getId())) {
                 votes.add(vote);
             }
         }
@@ -360,9 +359,9 @@ public class DatabaseManager implements IDatabaseManager {
         }
 
         // remove the election from the database
-        electionsTable.removeWhere("name", election).thenAccept((electionRemoveResult) -> {
+        electionsTable.removeWhere("id", election.getId()).thenAccept((electionRemoveResult) -> {
             if (electionRemoveResult instanceof String) {
-                logger.severe(String.format("deleteElection[%s]: remove election: " + name, (String)electionRemoveResult));
+                logger.severe(String.format("deleteElection[%s]: remove election: " + election.getName(), (String)electionRemoveResult));
             }
         });
 
@@ -370,7 +369,7 @@ public class DatabaseManager implements IDatabaseManager {
         for (Vote vote : votes) {
             this.deleteVote(vote).thenAccept((voteRemoveResult) -> {
                 if (voteRemoveResult instanceof String) {
-                    logger.severe(String.format("deleteElection[%s]: remove vote: " + name, (String)voteRemoveResult));
+                    logger.severe(String.format("deleteElection[%s]: remove vote: " + election.getName(), (String)voteRemoveResult));
                 }
             });
         }
@@ -381,7 +380,7 @@ public class DatabaseManager implements IDatabaseManager {
         cache.getVotes().remove(vote.getCacheKey());
 
         UUID voteId = vote.getVoteId();
-        return votesTable.removeWhere("voteId", voteId);
+        return votesTable.removeWhere("id", voteId);
     }
 
     @Override
@@ -394,12 +393,12 @@ public class DatabaseManager implements IDatabaseManager {
                     ResultSet set = statement.executeQuery();
                     List<Vote> votes = new ArrayList<>();
                     while (set.next()) {
-                        UUID voteId = UUID.fromString(set.getString("voteId"));
+                        UUID voteId = UUID.fromString(set.getString("id"));
                         UUID player = UUID.fromString(set.getString("player"));
                         String party = set.getString("party");
-                        String election = set.getString("election");
+                        UUID electionId = UUID.fromString(set.getString("electionId"));
 
-                        Vote vote = new Vote(voteId, player, party, election);
+                        Vote vote = new Vote(voteId, player, party, electionId);
                         votes.add(vote);
                     }
                     future.complete(votes);
@@ -414,7 +413,7 @@ public class DatabaseManager implements IDatabaseManager {
 
     @Override
     public CompletableFuture<Boolean> vote(UUID player, Party party, Election election) {
-        Vote vote = new Vote(UUID.randomUUID(), player, party.getName(), election.getName());
+        Vote vote = new Vote(UUID.randomUUID(), player, party.getName(), election.getId());
         return this.vote(vote);
     }
 
@@ -427,7 +426,8 @@ public class DatabaseManager implements IDatabaseManager {
                 .thenAccept((set) -> {
                     try {
                         while (set.next()) {
-                            if (set.getString("election").equals(vote.getElection())) {
+                            UUID electionId = UUID.fromString(set.getString("electionId"));
+                            if (electionId.equals(vote.getElectionId())) {
                                 future.complete(false);
                                 return;
                             }

@@ -387,17 +387,17 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
     }
 
-    public Map<String, ElectionStatus> getElectionStatuses() {
-        HashMap<String, ElectionStatus> statuses = new HashMap<String, ElectionStatus>();
+    public Map<UUID, ElectionStatus> getElectionStatuses() {
+        HashMap<UUID, ElectionStatus> statuses = new HashMap<UUID, ElectionStatus>();
 
-        Cache<String, Election> elections = this.getCache().getElections();
+        Cache<UUID, Election> elections = this.getCache().getElections();
         if (elections == null) {
             this.getLogger().severe("getElectionStatuses: null elections");
             return statuses;
         }
 
         for (Election election : elections.map().values()) {
-            statuses.put(election.getName(), new ElectionStatus(election));
+            statuses.put(election.getId(), new ElectionStatus(election));
         }
 
         Cache<String, Vote> votes = this.getCache().getVotes();
@@ -407,12 +407,12 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
 
         for (Vote vote : votes.map().values()) {
-            String electionName = vote.getElection();
+            UUID electionId = vote.getElectionId();
             String partyName = vote.getParty();
 
-            ElectionStatus status = statuses.get(electionName);
+            ElectionStatus status = statuses.get(electionId);
             if (status == null) {
-                this.getLogger().warning(String.format("vote for election %s party %s: election not found", electionName, partyName));
+                this.getLogger().warning(String.format("vote for election %s party %s: election not found", electionId.toString(), partyName));
                 continue;
             }
 
@@ -423,8 +423,14 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
     }
 
     public ElectionStatus getElectionStatus(String electionName) {
-        Map<String, ElectionStatus> statuses = this.getElectionStatuses();
+        Map<UUID, ElectionStatus> statuses = this.getElectionStatuses();
 
-        return statuses.get(electionName);
+        for (ElectionStatus status : statuses.values()) {
+            if (status.getElection().getName().equals(electionName)) {
+                return status;
+            }
+        }
+
+        return null;
     }
 }
