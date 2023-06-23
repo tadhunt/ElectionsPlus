@@ -28,6 +28,7 @@ import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.lorenzo0111.elections.api.IElectionsPlusAPI;
 import me.lorenzo0111.elections.api.implementations.ElectionsPlusAPI;
 import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.CacheEventHandler;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Vote;
@@ -70,8 +71,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public final class ElectionsPlus extends JavaPlugin {
-    private final CacheManager cache = new CacheManager();
+public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler {
+    private final CacheManager cache = new CacheManager(this);
     private boolean loaded;
     private IDatabaseManager manager;
     private static ElectionsPlus instance;
@@ -125,6 +126,11 @@ public final class ElectionsPlus extends JavaPlugin {
          Bukkit.getScheduler().cancelTasks(this);
 
          Messages.close();
+    }
+
+    // called by CacheTask every time the cache is reloaded
+    public void onCacheInitialized() {
+        this.holoRefresh();
     }
 
     public void start() throws ConfigurateException {

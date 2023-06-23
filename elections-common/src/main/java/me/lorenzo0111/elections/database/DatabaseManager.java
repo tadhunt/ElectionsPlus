@@ -158,7 +158,7 @@ public class DatabaseManager implements IDatabaseManager {
         this.hologramsTable = new ETable(scheduler, connectionHandler, "holograms", hologramsColumns);
         this.hologramsTable.create();
 
-        scheduler.repeating(new CacheTask(this, cache), 60 * 20L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
+        scheduler.repeating(new CacheTask(this, cache), 0L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
     }
 
     public ETable getPartiesTable() {

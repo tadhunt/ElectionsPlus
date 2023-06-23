@@ -24,6 +24,9 @@
 
 package me.lorenzo0111.elections.tasks;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import me.lorenzo0111.elections.cache.CacheManager;
 import me.lorenzo0111.elections.database.IDatabaseManager;
 
@@ -38,23 +41,39 @@ public class CacheTask implements Runnable {
 
     @Override
     public void run() {
+        AtomicInteger completions = new AtomicInteger(0);
+        CompletableFuture<Boolean> reloaded = new CompletableFuture<Boolean>();
+
         database.getParties()
                 .thenAccept((parties) -> {
                     cache.getParties().reset();
                     parties.forEach(party -> cache.getParties().add(party.getName(), party));
+                    if(completions.addAndGet(1) == 3) {
+                        reloaded.complete(true);
+                    }
                 });
 
         database.getElections()
                 .thenAccept((elections) -> {
                     cache.getElections().reset();
                     elections.forEach(election -> cache.getElections().add(election.getName(), election));
+                    if(completions.addAndGet(1) == 3) {
+                        reloaded.complete(true);
+                    }
                 });
 
         database.getVotes()
                 .thenAccept((votes) -> {
                     cache.getVotes().reset();
                     votes.forEach(vote -> cache.getVotes().add(vote.getVoteId().toString(), vote));
+                    if(completions.addAndGet(1) == 3) {
+                        reloaded.complete(true);
+                    }
                 });
+
+        reloaded.thenAccept((result) -> {
+            cache.getEventHandler().onCacheInitialized();
+        });
     }
 
 }
