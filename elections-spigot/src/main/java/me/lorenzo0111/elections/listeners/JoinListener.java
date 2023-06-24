@@ -37,14 +37,14 @@ public class JoinListener implements Listener {
     public void onJoin(PlayerJoinEvent event) {
         ElectionsPlus plugin = ElectionsPlus.getInstance();
 
-        if (!plugin.getConfig().getBoolean("join-notification")) {
-            return;
-        }
-
         if (event.getPlayer().hasPermission("elections.update") && plugin.getConfig().getBoolean("update.check")) {
             ElectionsPlus.getInstance()
                     .getUpdater()
                     .sendUpdateCheck(Messages.audience(event.getPlayer()));
+        }
+
+        if (!plugin.getConfig().getBoolean("join-notification")) {
+            return;
         }
 
         ElectionsPlus.getInstance()

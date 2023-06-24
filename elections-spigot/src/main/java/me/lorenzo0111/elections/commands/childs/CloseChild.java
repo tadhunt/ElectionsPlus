@@ -69,7 +69,7 @@ public class CloseChild extends SubCommand {
                     if (election != null) {
                         election.close();
 
-                        Messages.send(user.audience(), true, Messages.single("name", election.getName()), "errors", "election-closed");
+                        Messages.send(user.audience(), true, Messages.single("name", election.getName()), "close", "closed");
                         plugin.holoRefresh();
                         return;
                     }

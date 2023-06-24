@@ -102,7 +102,12 @@ public class InfoChild extends SubCommand {
         Integer total = status.getTotalVotes();
         for(String partyName : votes.keySet()) {
             Integer nvotes = votes.get(partyName);
-            Integer percent = nvotes * 100 / total;
+            Integer percent;
+            if (total == 0) {
+                percent = 0;
+            } else {
+                percent = (nvotes * 100) / total;
+            }
 
             HashMap<String, String> placeholders = new HashMap<String, String>();
             placeholders.put("party", partyName);

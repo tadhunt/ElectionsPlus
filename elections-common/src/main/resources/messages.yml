@@ -22,7 +22,6 @@ errors:
   invalid-election-name: "<red>Invalid election name."
   election-not-found: "<red>Election <yellow><name><red> not found."
   election-name-missing: "<red>Missing election name."
-  election-closed: "<gray>Election closed. Run <yellow>/elections proceed <name> <gray>to declare the winner."
   user-not-online: "<red>user <yellow><name><red> is not online."
   party-name-required: "<red>party name is required."
   member-name-required: "<red>member name is required."
@@ -137,8 +136,7 @@ proceed:
 votes:
   election-name: "<red>Insert a valid election name."
   title1: "<gray>Election <yellow><election> <gray>» State <state><gray>"
-  title2: "<dark_gray><st>=============</st><yellow> Votes <dark_gray><st>============="
-  name: "votes"
+  title2: "<dark_gray><st>=============</st><yellow> Parties <dark_gray><st>============="
   status-no-parties:    "<gold><b>•</b> <yellow>No parties<gray>."
   status-open:          "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>)"
   status-closed:        "<gold><b>•</b> <yellow><party> <gray>» <yellow><nvotes><gray> votes (<yellow><i><percent>%<gray>)."
@@ -211,6 +209,9 @@ hologram:
   list:        "<gray>Hologram <yellow><name><gray> location <yellow><location><gray>."
   refreshed:   "<gray>Holograms refreshed."
   text:        "<gray><text>"
+
+close:
+  closed: "<gray>Election closed."
 
 #
 # Placeholders
