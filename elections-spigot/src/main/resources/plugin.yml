@@ -6,3 +6,4 @@ authors: [ Lorenzo0111 ]
 commands:
   elections:
     description: Main command
+softdepend: [PlaceholderAPI, HolographicDisplays, GriefPrevention]

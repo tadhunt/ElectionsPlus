@@ -29,9 +29,12 @@ plugins {
 repositories {
     mavenCentral()
     maven { url 'https://repo.repsy.io/mvn/lorenzo0111/public/' }
+    maven { url 'https://jitpack.io' }
+
 }
 
 dependencies {
+    implementation("com.github.TechFortress:GriefPrevention:16.18")
     implementation("com.google.guava:guava:31.1-jre")
     implementation('com.google.code.gson:gson:2.10.1')
     compileOnly('org.jetbrains:annotations:24.0.1')

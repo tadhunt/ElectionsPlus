@@ -37,7 +37,7 @@ repositories {
     maven { url 'https://jitpack.io' }
     maven { url 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
     maven { url "https://repo.codemc.io/repository/maven-public/" }
-
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -46,7 +46,8 @@ dependencies {
 
     compileOnly('org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT')
     compileOnly('me.clip:placeholderapi:2.11.3')
-    compileOnly 'me.filoghost.holographicdisplays:holographicdisplays-api:3.0.0'
+    compileOnly('me.filoghost.holographicdisplays:holographicdisplays-api:3.0.0')
+    compileOnly('com.github.TechFortress:GriefPrevention:16.18')
 
     implementation('space.rocketplugins.pluginslib:bukkit:2.0.3.2')
     implementation("net.kyori:adventure-platform-bukkit:4.3.0")

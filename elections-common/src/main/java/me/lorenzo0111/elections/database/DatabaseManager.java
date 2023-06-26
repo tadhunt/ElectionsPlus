@@ -30,6 +30,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
@@ -42,6 +43,8 @@ import me.lorenzo0111.pluginslib.database.connection.HikariConnection;
 import me.lorenzo0111.pluginslib.database.connection.IConnectionHandler;
 import me.lorenzo0111.pluginslib.database.connection.SQLiteConnection;
 import me.lorenzo0111.pluginslib.database.objects.Column;
+import me.ryanhamshire.GriefPrevention.Claim;
+
 import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.IOException;
@@ -67,6 +70,7 @@ public class DatabaseManager implements IDatabaseManager {
     private ETable electionsTable;
     private ETable blocksTable;
     private ETable hologramsTable;
+    private ETable claimsTable;
 
     private final IConnectionHandler connectionHandler;
     private final CacheManager cache;
@@ -159,6 +163,13 @@ public class DatabaseManager implements IDatabaseManager {
         this.hologramsTable = new ETable(scheduler, connectionHandler, "holograms", hologramsColumns);
         this.hologramsTable.create();
 
+        // Claims
+        List<Column> claimsColumns = new ArrayList<>();
+        claimsColumns.add(new Column("name", "TEXT"));
+        claimsColumns.add(new Column("id", "TEXT"));
+        this.claimsTable = new ETable(scheduler, connectionHandler, "claims", claimsColumns);
+        this.claimsTable.create();
+
         scheduler.repeating(new CacheTask(this, cache), 0L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
     }
 
@@ -180,6 +191,10 @@ public class DatabaseManager implements IDatabaseManager {
 
     public ETable getHologramsTable() {
         return hologramsTable;
+    }
+
+    public ETable getClaimsTable() {
+        return claimsTable;
     }
 
     @Override
@@ -571,5 +586,125 @@ public class DatabaseManager implements IDatabaseManager {
         hologramsTable
             .removeWhere("name", hologram.getName())
             .thenRun(() -> hologramsTable.add(hologram));
+    }
+
+    @Override
+    public CompletableFuture<EClaim> createClaim(String name, Claim gclaim) {
+        EClaim eclaim = new EClaim(name, gclaim);
+        CompletableFuture<EClaim> future = new CompletableFuture<>();
+        claimsTable.find("name", name)
+                .thenAccept((resultSet) -> {
+                    try {
+                        if (resultSet.next()) {
+                                future.complete(null);
+                                return;
+                        }
+
+                        claimsTable.add(eclaim);
+                        future.complete(eclaim);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                });
+
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Map<String, EClaim>> getClaims() {
+        CompletableFuture<Map<String, EClaim>> future = new CompletableFuture<>();
+
+        getClaimsTable().run(() -> {
+            try {
+                Statement statement = connectionHandler.getConnection().createStatement();
+                String query = String.format("SELECT * FROM %s;", getHologramsTable().getName());
+                ResultSet resultSet = statement.executeQuery(query);
+
+                HashMap<String, EClaim> claims = new HashMap<String, EClaim>();
+
+                while (resultSet.next()) {
+                    String jsonString = resultSet.getString("json");
+
+                    EClaim claim = new Gson().fromJson(jsonString, EClaim.class);
+                    claims.put(claim.getName(), claim);
+                }
+
+                future.complete(claims);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                future.complete(null);
+            }
+        });
+
+        return future;
+    }
+
+    public CompletableFuture<EClaim> getClaimById(Long id) {
+        return getClaim("id", id.toString());
+    }
+
+    public CompletableFuture<EClaim> getClaimByName(String name) {
+        return getClaim("name", name);
+    }
+
+    private CompletableFuture<EClaim> getClaim(String key, String value) {
+        CompletableFuture<EClaim> future = new CompletableFuture<>();
+
+        getClaimsTable().run(() -> {
+            try {
+                Statement statement = connectionHandler.getConnection().createStatement();
+                String query = String.format("SELECT * FROM %s WHERE %s = '%s';", getClaimsTable().getName(), key, value);
+                ResultSet resultSet = statement.executeQuery(query);
+
+                Integer nClaims = 0;
+                EClaim claim = null;
+
+                while (resultSet.next()) {
+                    String jsonString = resultSet.getString("json");
+
+                    nClaims++;
+                    claim = new Gson().fromJson(jsonString, EClaim.class);
+                }
+
+                if (nClaims != 1) {
+                    this.logger.severe(String.format("getClaims: got %d claims for key %s value %s (expected 0 or 1)", nClaims, key, value));
+                    future.complete(null);
+                }
+
+                future.complete(claim);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                future.complete(null);
+            }
+        });
+
+        return future;
+
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteClaim(EClaim claim) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+        claimsTable.removeWhere("id", claim.getId())
+            .thenAccept((result) -> {
+                if (result instanceof Integer) {
+                    future.complete(true);
+                    return;
+                }
+                if (result instanceof String) {
+                    this.logger.severe("deleteClaim: " + (String)result);
+                }
+                this.logger.severe("deleteClaim: " + result.toString());
+                future.complete(false);
+            });
+
+        return future;
+    }
+
+    @Override
+    public void updateClaim(EClaim claim) {
+        claimsTable
+            .removeWhere("name", claim.getName())
+            .thenRun(() -> claimsTable.add(claim));
     }
 }

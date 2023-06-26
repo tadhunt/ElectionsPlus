@@ -96,24 +96,32 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         
         Boolean checkForUpdates = config.node("update", "check").getBoolean(false);
         if (checkForUpdates) {
-            this.getLogger().info("Enabling update checks...");
+            this.getLogger().info("Update checks enabled.");
             Getters.updater(new UpdateChecker(new BukkitScheduler(this), this.getDescription().getVersion(), this.getName(), 93463, "https://www.spigotmc.org/resources/93463/", null, null));
         }
 
         if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            this.getLogger().info("Enabling PlaceholderAPI...");
+            this.getLogger().info("Placeholders enabled.");
             new ElectionsPlusPlaceholderExpansion(this).register();
+        } else {
+            this.getLogger().info("Placeholders disabled: add PlaceholderAPI plugin to enable.");
         }
 
-        if (!Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
-            this.getLogger().info("holograms disabled: HolograpicDisplays plugin not enabled");
+        if (Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
+            this.holoApi = HolographicDisplaysAPI.get(this);
+            this.getLogger().info("Holograms enabled");
+        } else {
             this.holoApi = null;
-            return;
+            this.getLogger().info("Holograms disabled: add HolograpicDisplays plugin to enable.");
         }
 
-        this.holoApi = HolographicDisplaysAPI.get(this);
+        if (Bukkit.getPluginManager().isPluginEnabled("GriefPrevention")) {
+            this.getLogger().info("GriefPrevention integration enabled.");
+        } else {
+            this.getLogger().info("GriefPrevention integration disabled: add GriefPrevention plugin to enable.");
 
-        this.getLogger().info("Holograms enabled");
+        }
+
     }
 
     @Override

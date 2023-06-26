@@ -24,6 +24,7 @@
 
 package me.lorenzo0111.elections.database;
 
+import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
@@ -35,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import me.ryanhamshire.GriefPrevention.Claim;
 
 public interface IDatabaseManager {
     void closeConnection() throws SQLException;
@@ -63,4 +66,11 @@ public interface IDatabaseManager {
     CompletableFuture<DBHologram> createHologram(String name, String location, List<String> contents);
     void deleteHologram(String name);
     void updateHologram(DBHologram hologram);
+
+    CompletableFuture<Map<String, EClaim>> getClaims();
+    CompletableFuture<EClaim> getClaimById(Long id);
+    CompletableFuture<EClaim> getClaimByName(String name);
+    CompletableFuture<EClaim> createClaim(String name, Claim claim);
+    CompletableFuture<Boolean> deleteClaim(EClaim claim);
+    void updateClaim(EClaim claim);
 }
