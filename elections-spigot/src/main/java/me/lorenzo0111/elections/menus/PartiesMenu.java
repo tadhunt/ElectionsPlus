@@ -40,15 +40,15 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.EnumSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class PartiesMenu extends PaginatedGui {
     private final Player owner;
-    private final List<Party> parties;
+    private final Map<String, Party> parties;
     private final ElectionsPlus plugin;
 
-    public PartiesMenu(Player owner, List<Party> parties, ElectionsPlus plugin) {
+    public PartiesMenu(Player owner, Map<String, Party> parties, ElectionsPlus plugin) {
         super(3, 17, Messages.componentString(false, "guis", "parties"), EnumSet.noneOf(InteractionModifier.class));
 
         this.owner = owner;
@@ -74,7 +74,7 @@ public class PartiesMenu extends PaginatedGui {
 
             this.getFiller().fillBottom(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
 
-            for (Party party : parties) {
+            for (Party party : parties.values()) {
                 SkullBuilder item = ItemBuilder.skull()
                         .name(Component.text("§9" + party.getName()))
                         .lore(canEdit(owner, party) ? Messages.component(false, "guis", "edit-party") : Messages.component(false, "guis", "no-edit-party"));
@@ -100,7 +100,7 @@ public class PartiesMenu extends PaginatedGui {
         return owner;
     }
 
-    public List<Party> getParties() {
+    public Map<String, Party> getParties() {
         return parties;
     }
 

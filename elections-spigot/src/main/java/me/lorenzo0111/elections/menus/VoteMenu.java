@@ -57,7 +57,7 @@ public class VoteMenu extends PaginatedGui {
         this.setItem(3, 3, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "back")).asGuiItem(e -> this.previous()));
         this.setItem(3, 7, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "next")).asGuiItem(e -> this.next()));
 
-        for (Party party : election.getParties()) {
+        for (Party party : election.getParties().values()) {
             this.addItem(ItemBuilder.skull()
                     .name(Component.text("§9" + party.getName()))
                     .lore(Messages.component(false, "guis", "vote"))

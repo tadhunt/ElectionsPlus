@@ -127,7 +127,7 @@ public class DatabaseManager implements IDatabaseManager {
         votesColumns.add(new Column("player", "TEXT"));
         votesColumns.add(new Column("party", "TEXT"));
         votesColumns.add(new Column("electionId", "TEXT"));
-        this.votesTable = new ETable(scheduler, connectionHandler, "votes", votesColumns);
+        this.votesTable = new ETable(logger, scheduler, connectionHandler, "votes", votesColumns);
         this.votesTable.create();
 
         // Parties
@@ -136,8 +136,9 @@ public class DatabaseManager implements IDatabaseManager {
         partiesColumns.add(new Column("name", "TEXT"));
         partiesColumns.add(new Column("members", "TEXT"));
         partiesColumns.add(new Column("icon", "TEXT nullable"));
-        this.partiesTable = new ETable(scheduler, connectionHandler, "parties", partiesColumns);
+        this.partiesTable = new ETable(logger, scheduler, connectionHandler, "parties", partiesColumns);
         this.partiesTable.create();
+        this.partiesTable.setUnique("idx_parties_name", "name");
 
         // Elections
         List<Column> electionsColumns = new ArrayList<>();
@@ -145,7 +146,7 @@ public class DatabaseManager implements IDatabaseManager {
         electionsColumns.add(new Column("name", "TEXT"));
         electionsColumns.add(new Column("parties", "TEXT"));
         electionsColumns.add(new Column("open", "INTEGER"));
-        this.electionsTable = new ETable(scheduler, connectionHandler, "elections", electionsColumns);
+        this.electionsTable = new ETable(logger, scheduler, connectionHandler, "elections", electionsColumns);
         this.electionsTable.create();
 
         // Blocks
@@ -153,14 +154,14 @@ public class DatabaseManager implements IDatabaseManager {
         blocksColumns.add(new Column("world", "TEXT"));
         blocksColumns.add(new Column("location", "TEXT"));
         blocksColumns.add(new Column("blockdata", "TEXT"));
-        this.blocksTable = new ETable(scheduler, connectionHandler, "blocks", blocksColumns);
+        this.blocksTable = new ETable(logger, scheduler, connectionHandler, "blocks", blocksColumns);
         this.blocksTable.create();
 
         // Holograms
         List<Column> hologramsColumns = new ArrayList<>();
         hologramsColumns.add(new Column("name", "TEXT"));
         hologramsColumns.add(new Column("json", "TEXT"));
-        this.hologramsTable = new ETable(scheduler, connectionHandler, "holograms", hologramsColumns);
+        this.hologramsTable = new ETable(logger, scheduler, connectionHandler, "holograms", hologramsColumns);
         this.hologramsTable.create();
 
         // Claims
@@ -168,7 +169,7 @@ public class DatabaseManager implements IDatabaseManager {
         claimsColumns.add(new Column("name", "TEXT"));
         claimsColumns.add(new Column("id", "TEXT"));
         claimsColumns.add(new Column("owner", "TEXT"));
-        this.claimsTable = new ETable(scheduler, connectionHandler, "claims", claimsColumns);
+        this.claimsTable = new ETable(logger, scheduler, connectionHandler, "claims", claimsColumns);
         this.claimsTable.create();
 
         scheduler.repeating(new CacheTask(this, cache), 0L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
@@ -199,10 +200,8 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public CompletableFuture<Election> createElection(String name, List<Party> parties) {
+    public CompletableFuture<Election> createElection(String name, Map<String, Party> parties) {
         CompletableFuture<Election> future = new CompletableFuture<>();
-
-        Election election = new Election(UUID.randomUUID(), name, parties, true);
 
         this.getElectionsTable()
             .find("name", name)
@@ -213,8 +212,9 @@ public class DatabaseManager implements IDatabaseManager {
                         return;
                     }
 
-                    this.getElectionsTable().add(election);
+                    Election election = new Election(UUID.randomUUID(), name, parties, true);
                     cache.getElections().add(election.getId(), election);
+                    this.getElectionsTable().add(election);
                     future.complete(election);
                 } catch (SQLException e) {
                     e.printStackTrace();
@@ -233,8 +233,9 @@ public class DatabaseManager implements IDatabaseManager {
     public CompletableFuture<List<Election>> getElections() {
         CompletableFuture<List<Election>> future = new CompletableFuture<>();
 
-        getParties()
-                .thenAccept((allParties) -> getElectionsTable().run(() -> {
+        getParties().
+            thenAccept((parties) -> {
+                getElectionsTable().run(() -> {
                     try {
                         Statement statement = connectionHandler.getConnection().createStatement();
                         ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s;", getElectionsTable().getName()));
@@ -246,15 +247,16 @@ public class DatabaseManager implements IDatabaseManager {
                             String name = resultSet.getString("name");
                             Boolean open = resultSet.getInt("open") != 0;
 
-                            List<Party> parties = new ArrayList<>();
                             Type type = new TypeToken<ArrayList<String>>() {}.getType();
                             List<String> partyNames = new ArrayList<>(gson.fromJson(resultSet.getString("parties"), type));
-                            partyNames.forEach((n) -> allParties.stream()
-                                    .filter((p) -> p.getName().equals(n))
-                                    .findFirst()
-                                    .ifPresent(parties::add));
-
-                            Election election = new Election(id, name, parties, open);
+                            Map<String, Party> electionParties = new HashMap<String, Party>();
+                            for (String partyName : partyNames) {
+                                Party party = parties.get(partyName);
+                                if (party != null) {
+                                    electionParties.put(partyName, party);
+                                }
+                            }
+                            Election election = new Election(id, name, electionParties, open);
 
                             elections.add(election);
                         }
@@ -268,34 +270,72 @@ public class DatabaseManager implements IDatabaseManager {
                         logger.severe("EXCEPTION: " + e.toString());
                         future.complete(null);
                     }
-                }));
+                });
+        });
 
         return future;
     }
 
     @Override
-    public CompletableFuture<List<Party>> getParties() {
-        CompletableFuture<List<Party>> future = new CompletableFuture<>();
+    public CompletableFuture<Map<String, Party>> getParties() {
+        CompletableFuture<Map<String, Party>> future = new CompletableFuture<>();
 
         getPartiesTable().run(() -> {
             try {
                 Statement statement = connectionHandler.getConnection().createStatement();
                 ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s;", getPartiesTable().getName()));
 
-                List<Party> parties = new ArrayList<>();
-                Gson gson = new Gson();
+                Map<String, Party> parties = new HashMap<String, Party>();
                 while (resultSet.next()) {
-                    Type type = new TypeToken<ArrayList<UUID>>() {}.getType();
-                    List<UUID> members = new ArrayList<>(gson.fromJson(resultSet.getString("members"), type));
-                    Party party = new Party(resultSet.getString("name"), UUID.fromString(resultSet.getString("owner")), members);
-
-                    if (resultSet.getString("icon") != null)
-                        party.setIcon(resultSet.getString("icon"));
-
-                    parties.add(party);
+                    Party party = decodeParty(resultSet);
+                    parties.put(party.getName(), party);
                 }
 
                 future.complete(parties);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                future.complete(null);
+            }
+        });
+
+        return future;
+    }
+                    
+    private Party decodeParty(ResultSet resultSet) throws SQLException {
+        Type type = new TypeToken<ArrayList<UUID>>() {}.getType();
+        Gson gson = new Gson();
+        List<UUID> members = new ArrayList<>(gson.fromJson(resultSet.getString("members"), type));
+        Party party = new Party(resultSet.getString("name"), UUID.fromString(resultSet.getString("owner")), members);
+
+        if (resultSet.getString("icon") != null) {
+            party.setIcon(resultSet.getString("icon"));
+        }
+
+        return party;
+    }
+
+    @Override
+    public CompletableFuture<Party> getParty(String partyName) {
+        CompletableFuture<Party> future = new CompletableFuture<>();
+
+        getPartiesTable().run(() -> {
+            try {
+                Statement statement = connectionHandler.getConnection().createStatement();
+                ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s WHERE name = '%s';", getPartiesTable().getName(), partyName));
+
+                Integer nParties = 0;
+                Party party = null;
+                while (resultSet.next()) {
+                    nParties++;
+                    party = decodeParty(resultSet);
+                }
+
+                if (nParties > 1) {
+                    logger.severe(String.format("getParty: found %d parties with name '%s', expected 0..1", partyName, nParties));
+                    future.complete(null);
+                }
+
+                future.complete(party);
             } catch (SQLException e) {
                 e.printStackTrace();
                 future.complete(null);
@@ -333,6 +373,13 @@ public class DatabaseManager implements IDatabaseManager {
     public void deleteParty(String name) {
         cache.getParties().remove(name);
         partiesTable.removeWhere("name", name);
+
+        // remove the party from all elections it's part of
+        for (Election election : cache.getElections().map().values()) {
+            if (election.deleteParty(name)) {
+                this.updateElection(election);
+            }
+        }
     }
 
     @Override

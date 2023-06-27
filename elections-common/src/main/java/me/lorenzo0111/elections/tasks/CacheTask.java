@@ -47,7 +47,7 @@ public class CacheTask implements Runnable {
         database.getParties()
                 .thenAccept((parties) -> {
                     cache.getParties().reset();
-                    parties.forEach(party -> cache.getParties().add(party.getName(), party));
+                    parties.values().forEach(party -> cache.getParties().add(party.getName(), party));
                     if(completions.addAndGet(1) == 3) {
                         reloaded.complete(true);
                     }

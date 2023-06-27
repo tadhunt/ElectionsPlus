@@ -78,13 +78,8 @@ public class ElectionsPlusAPI implements IElectionsPlusAPI {
 
         plugin.getManager()
                 .getParties()
-                .thenAccept(p -> {
-                    Party party = p.stream()
-                            .filter(f -> f.getName().equals(name))
-                            .findFirst()
-                            .orElse(null);
-
-                    future.complete(party);
+                .thenAccept((parties) -> {
+                    future.complete(parties.get(name));
                 });
 
         return future;

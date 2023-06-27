@@ -2,13 +2,10 @@ package me.lorenzo0111.elections.listeners;
 
 import java.util.UUID;
 
-import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 import me.lorenzo0111.elections.ElectionsPlus;
-import me.lorenzo0111.elections.api.objects.EClaim;
-import me.lorenzo0111.elections.database.IDatabaseManager;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.events.ClaimPermissionCheckEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimTransferEvent;
@@ -40,14 +37,13 @@ public class ClaimListener implements Listener {
 
         plugin.getLogger().info(String.format("onClaimDeleted[claim %d]: claim deleted", gclaim.getID()));
 
-        IDatabaseManager manager = plugin.getManager();
-        manager.getClaimById(gclaim.getID())
+        plugin.getManager().getClaimById(gclaim.getID())
             .thenAccept((eclaim) -> {
                 if (eclaim == null) {
                     plugin.getLogger().info(String.format("onClaimDeleted[claim %d]: no corresponding elections claim to delete", gclaim.getID()));
                     return;
                 }
-                manager.deleteClaim(eclaim)
+                plugin.getManager().deleteClaim(eclaim)
                     .thenAccept((success) -> {
                         if (success) {
                             plugin.getLogger().info(String.format("onClaimDeleted[claim %d/%s]: claim deleted", gclaim.getID(), eclaim.getName()));

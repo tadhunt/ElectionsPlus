@@ -36,9 +36,10 @@ import me.lorenzo0111.pluginslib.command.SubCommand;
 import me.lorenzo0111.pluginslib.command.annotations.Permission;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 public class PartiesChild extends SubCommand {
@@ -67,7 +68,8 @@ public class PartiesChild extends SubCommand {
         if (args.length < 2) {
             plugin.getManager()
                 .getParties()
-                .thenAccept((parties) -> new PartiesMenu(player, parties, plugin).setup());
+                .thenAccept((parties) -> new PartiesMenu
+                 (player, parties, plugin).setup());
             return;
         }
 
@@ -90,7 +92,7 @@ public class PartiesChild extends SubCommand {
             }
             return;
         }
-        
+ 
         if (command.equalsIgnoreCase("delete")) {
             switch (a.size()) {
             default:
@@ -141,21 +143,19 @@ public class PartiesChild extends SubCommand {
         player.sendMessage(Messages.componentString(true, "errors", "command-not-found"));
     }
 
-    private void addMember(Player player, List<Party> parties, String partyName, String memberName) {
-        Player member = Bukkit.getPlayer(memberName);
+    private void addMember(Player player, Map<String, Party> parties, String partyName, String memberName) {
+        OfflinePlayer member = Bukkit.getPlayer(memberName);
         if (member == null) {
             player.sendMessage(Messages.componentString(true, Messages.single("name", memberName), "errors", "user-not-online"));
             return;
         }
 
-        for (Party party : parties) {
-            if (party.getName().equals(partyName)) {
-                party.addMember(member.getUniqueId());
-                player.sendMessage(Messages.componentString(true, Messages.multiple("name", member.getName(), "party", party.getName()), "parties", "user-added"));        
-                return;
-            }
+        Party party = parties.get(partyName);
+        if (party != null) {
+            party.addMember(member.getUniqueId());
+            player.sendMessage(Messages.componentString(true, Messages.multiple("name", member.getName(), "party", party.getName()), "parties", "user-added"));
+        } else  {
+            player.sendMessage(Messages.componentString(true, Messages.single("party", partyName), "errors", "party-not-found"));
         }
-        
-        player.sendMessage(Messages.componentString(true, Messages.single("party", partyName), "errors", "party-not-found"));
     }
 }

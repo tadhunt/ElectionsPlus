@@ -42,12 +42,13 @@ import me.ryanhamshire.GriefPrevention.Claim;
 public interface IDatabaseManager {
     void closeConnection() throws SQLException;
 
-    CompletableFuture<Election> createElection(String name, List<Party> parties);
+    CompletableFuture<Election> createElection(String name, Map<String, Party> parties);
     CompletableFuture<List<Election>> getElections();
     void updateElection(Election election);
     void deleteElection(Election election);
 
-    CompletableFuture<List<Party>> getParties();
+    CompletableFuture<Map<String, Party>> getParties();
+    CompletableFuture<Party> getParty(String name);
     CompletableFuture<Party> createParty(String name, UUID owner);
     void deleteParty(String name);
     void deleteParty(Party party);

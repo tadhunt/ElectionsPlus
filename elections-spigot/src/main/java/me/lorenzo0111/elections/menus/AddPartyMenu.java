@@ -39,31 +39,33 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class AddPartyMenu extends PaginatedGui {
-    private final List<Party> parties;
+    private final Map<String, Party> parties;
     private final Player owner;
     private final ElectionsPlus plugin;
     private final CreateElectionMenu menu;
-    private final List<Party> added = new ArrayList<>();
+    private final Map<String, Party> added = new HashMap<>();
 
-    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, List<Party> party, Player owner) {
+    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, Map<String, Party> parties, Player owner) {
         super(3, 0, Messages.componentString(false, Messages.single("name", menu.getName()), "guis", "add-party"), new HashSet<InteractionModifier>());
 
         this.menu = menu;
-        this.parties = party;
+        this.parties = parties;
         this.owner = owner;
         this.plugin = plugin;
     }
 
-    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, List<Party> party, Player owner, List<Party> alreadyAdded) {
-        this(plugin, menu, party, owner);
+    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, Map<String, Party> parties, Player owner, Map<String, Party> alreadyAdded) {
+        this(plugin, menu, parties, owner);
 
-        this.added.addAll(alreadyAdded);
+        for(Party party : alreadyAdded.values()) {
+            this.added.put(party.getName(), party);
+        }
     }
 
     public void setup() {
@@ -73,12 +75,12 @@ public class AddPartyMenu extends PaginatedGui {
             this.setItem(3, 7, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "next")).asGuiItem(e -> this.next()));
             this.setItem(3, 5, ItemBuilder.from(Objects.requireNonNull(XMaterial.EMERALD_BLOCK.parseItem())).name(Messages.component(false, "guis", "save")).asGuiItem(e -> {
                 e.getWhoClicked().closeInventory();
-                menu.getParties().addAll(added);
+                menu.addParties(added);
                 menu.setup();
             }));
             this.getFiller().fillBottom(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
 
-            for (Party party : parties) {
+            for (Party party : parties.values()) {
                 SkullBuilder item = ItemBuilder.skull()
                         .owner(Bukkit.getOfflinePlayer(party.getOwner()))
                         .name(Component.text("§9" + party.getName()))
@@ -99,13 +101,14 @@ public class AddPartyMenu extends PaginatedGui {
         return (e -> {
             switch (e.getClick()) {
                 case LEFT:
-                    if (!added.contains(party))
-                        added.add(party);
+                    if (added.get(party.getName()) == null) {
+                        added.put(party.getName(), party);
+                    }
                     item.name(Messages.component(false, Messages.single("name", party.getName()), "guis", "party-added"));
                     this.updatePageItem(e.getSlot(), item.asGuiItem(createAddAction(party, item)));
                     break;
                 case RIGHT:
-                    added.remove(party);
+                    added.remove(party.getName());
                     item.name(Component.text("§9" + party.getName()));
                     this.updatePageItem(e.getSlot(), item.asGuiItem(createAddAction(party, item)));
                     break;

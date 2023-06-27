@@ -36,6 +36,7 @@ import me.lorenzo0111.pluginslib.command.SubCommand;
 import me.lorenzo0111.pluginslib.command.annotations.Permission;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.bukkit.entity.Player;
 
@@ -76,7 +77,7 @@ public class CreateChild extends SubCommand {
 
         String electionName = a.get(0);
         plugin.getManager()
-        .createElection(electionName, new ArrayList<Party>())
+        .createElection(electionName, new HashMap<String,Party>())
         .thenAccept(election -> {
             if (election == null) {
                 Messages.send(player, true, "errors", "election-exists");

@@ -29,19 +29,17 @@ import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public class Election implements DatabaseSerializable {
     private final UUID id;
     private final String name;
-    private final List<Party> parties;
+    private final Map<String, Party> parties;
     private boolean open;
 
-    public Election(UUID id, String name, List<Party> parties, boolean open) {
+    public Election(UUID id, String name, Map<String, Party> parties, boolean open) {
         this.id = id;
         this.name = name;
         this.parties = parties;
@@ -56,12 +54,36 @@ public class Election implements DatabaseSerializable {
         return name;
     }
 
-    public List<Party> getParties() {
+    public Map<String, Party> getParties() {
         return parties;
+    }
+
+    public Party getParty(String name) {
+        return parties.get(name);
+    }
+
+    public Boolean deleteParty(String name) {
+        Boolean deleted = parties.remove(name) != null;
+
+        if (deleted) {
+            Getters.database().updateElection(this);
+        }
+        return deleted;
+    }
+            
+    public void addParty(Party party) {
+        if (parties.get(party.getName()) != null) {
+            return;
+        }
+
+        parties.put(party.getName(), party);
+
+        Getters.database().updateElection(this);
     }
 
     public void close() {
         this.open = false;
+
         Getters.database().updateElection(this);
     }
 
@@ -81,13 +103,10 @@ public class Election implements DatabaseSerializable {
 
     @Override
     public @NotNull Map<String, Object> serialize() {
-        List<String> parties = new ArrayList<>();
-        this.getParties().forEach(p -> parties.add(p.getName()));
-
         Map<String, Object> map = new HashMap<>();
         map.put("id", id.toString());
         map.put("name", name);
-        map.put("parties", new Gson().toJson(parties));
+        map.put("parties", new Gson().toJson(parties.keySet()));
         map.put("open", isOpen() ? 1 : 0);
 
         return map;

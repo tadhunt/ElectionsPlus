@@ -38,7 +38,7 @@ public class ElectionStatus {
         this.election = election;
         this.totalVotes = 0;
         this.partyVotes = new HashMap<String, Integer>();
-        for (Party party : election.getParties()) {
+        for (Party party : election.getParties().values()) {
             this.partyVotes.put(party.getName(), 0);
         }
     }

@@ -38,18 +38,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 /**
  * SQL Table
  */
 @SuppressWarnings("unused")
 public class ETable {
+    private final Logger logger;
     private final IScheduler scheduler;
     private final IConnectionHandler connection;
     private final String name;
     private final List<Column> columns;
 
-    public ETable(IScheduler scheduler, IConnectionHandler connection, String name, List<Column> columns) {
+    public ETable(Logger logger, IScheduler scheduler, IConnectionHandler connection, String name, List<Column> columns) {
+        this.logger = logger;
         this.scheduler = scheduler;
         this.connection = connection;
         this.name = name;
@@ -68,6 +71,17 @@ public class ETable {
             Statement statement = connection.getConnection().createStatement();
             statement.executeUpdate(StringUtils.removeLastChar(query.toString()) + ");");
             statement.close();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+    public void setUnique(String indexName, String columnName) {
+        try {
+            Statement statement = connection.getConnection().createStatement();
+            ResultSet resultSet = statement.executeQuery(String.format("CREATE UNIQUE INDEX %s ON %s(%s);", indexName, name, columnName));
+            while (resultSet.next()) {
+                logger.warning(String.format("setUnique[%s.%%s]: %s", indexName, columnName, resultSet.toString()));
+            }
         } catch (SQLException ex) {
             ex.printStackTrace();
         }

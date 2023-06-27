@@ -35,6 +35,7 @@ import me.lorenzo0111.pluginslib.command.annotations.Permission;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.bukkit.entity.Player;
 
@@ -51,15 +52,6 @@ public class AddPartyToElectionChild extends SubCommand {
         return "add-party";
     }
     
-    private static Party findParty(List<Party> parties, String name) {
-        for (Party party : parties) {
-            if (party.getName().equals(name)) {
-                return party;
-            }
-        }
-        return null;
-    }
-
     @Permission("elections.create")
     @Override
     public void handleSubcommand(User<?> sender, String[] args) {
@@ -94,24 +86,24 @@ public class AddPartyToElectionChild extends SubCommand {
         }
         
     private void electionAddParties(Election election, User<?> sender, ArrayList<String> args) {
-        plugin.getManager()
-            .getParties()
+        plugin.getManager().getParties()
             .thenAccept((parties) -> {
                 Boolean dirty = false;
-                List<Party> electionParties = election.getParties();
+                Map<String, Party> electionParties = election.getParties();
                 
                 for (String partyName : args) {
-                    Party party = findParty(parties, partyName);
+                    Party party = parties.get(partyName);
                     if (party == null) {
                         Messages.send(sender.audience(), true, Messages.single("party", partyName), "errors", "party-not-found");
                         return;
                     }
-                    
-                    if (electionParties.contains(party)) {
+
+                    if (electionParties.get(party.getName()) != null) {
+                        Messages.send(sender.audience(), true, Messages.single("party", partyName), "errors", "party-already-added");
                         continue;
                     }
                     
-                    electionParties.add(party);
+                    electionParties.put(party.getName(), party);
                     dirty = true;
                     Messages.send(sender.audience(), true, Messages.multiple("party", partyName, "election", election.getName()), "election", "party-added");
                 }

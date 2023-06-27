@@ -32,6 +32,7 @@ import me.lorenzo0111.elections.api.objects.CacheEventHandler;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.Election;
+import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.cache.CacheManager;
 import me.lorenzo0111.elections.commands.ElectionsCommand;
@@ -167,6 +168,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                     }
 
                     claimTransfer(gclaim, eclaim, gclaim.getOwnerID());
+                    claimPartyUpdate(eclaim);
                 }
             });
     }
@@ -195,6 +197,51 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
 
         eclaim.setOwner(newOwner);
+    }
+
+    private void claimPartyUpdate(EClaim eclaim) {
+        String name = eclaim.getName();
+        UUID owner = eclaim.getOwner();
+
+        if (owner == null) {
+            this.getManager().deleteParty(name);
+            return;
+        }
+
+        Map<String, Party> parties = this.getCache().getParties().map();
+        Party party = parties.get(name);
+
+        if (party == null) {
+            this.getManager().createParty(name, new UUID(0, 0))
+                .thenAccept((newParty) -> {
+                    if (newParty == null) {
+                        this.getLogger().warning("party " + name + ": creation failed.");
+                        return;
+                    }
+                    addPartyToOpenElections(newParty);
+                });
+            return;
+        }
+
+        addPartyToOpenElections(party);
+    }
+
+    private void addPartyToOpenElections(Party party) {
+        Cache<UUID, Election> elections = this.getCache().getElections();
+        for (Election election : elections.map().values()) {
+            if (!election.isOpen()) {
+                this.getLogger().info(String.format("election %s: skip (closed)", election.getName()));
+                continue;
+            }
+
+            if (election.getParty(party.getName()) != null) {
+                this.getLogger().info(String.format("election %s: party %s already added", election.getName(), party.getName()));
+                continue;
+
+            }
+
+            election.addParty(party);
+        }
     }
 
     // called by CacheTask every time the cache is reloaded

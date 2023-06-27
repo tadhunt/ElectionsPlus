@@ -37,16 +37,16 @@ import me.lorenzo0111.elections.handlers.Messages;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class CreateElectionMenu extends BaseGui {
     private String name;
     private final Player player;
     private final ElectionsPlus plugin;
-    private final List<Party> parties = new ArrayList<>();
+    private final Map<String, Party> parties = new HashMap<>();
 
     public CreateElectionMenu(ElectionsPlus plugin, String name, Player player) {
         super(5, Messages.componentString(false, "guis", "create"), EnumSet.noneOf(InteractionModifier.class));
@@ -124,7 +124,13 @@ public class CreateElectionMenu extends BaseGui {
         return player;
     }
 
-    public List<Party> getParties() {
+    public Map<String, Party> getParties() {
         return parties;
+    }
+
+    public void addParties(Map<String, Party> newParties) {
+        for (Party party : newParties.values()) {
+            parties.put(party.getName(), party);
+        }
     }
 }

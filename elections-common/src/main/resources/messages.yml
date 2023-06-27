@@ -26,6 +26,7 @@ errors:
   party-name-required: "<red>party name is required."
   member-name-required: "<red>member name is required."
   party-not-found: "<red>Party <yellow><party><red> not found."
+  party-already-added: "<red>Party <yellow><party><red> already added."
   no-block: "<red>No block where your crosshairs are pointing."
   block-already-exists: "<red>The block at that location is already added."
 
