@@ -375,17 +375,17 @@ public class DatabaseManager implements IDatabaseManager {
         partiesTable.removeWhere("name", name);
 
         // remove the party from all elections it's part of
-        for (Election election : cache.getElections().map().values()) {
-            if (election.deleteParty(name)) {
-                this.updateElection(election);
-            }
-        }
+        getElections()
+            .thenAccept((elections) -> {
+                for (Election election : elections) {
+                    election.deleteParty(name);
+                }
+        });
     }
 
     @Override
     public void deleteParty(Party party) {
-        cache.getParties().remove(party.getName());
-        partiesTable.removeWhere("name", party);
+        deleteParty(party.getName());
     }
 
     @Override
@@ -398,8 +398,10 @@ public class DatabaseManager implements IDatabaseManager {
 
     @Override
     public void updateElection(Election election) {
-        cache.getElections().remove(election.getId());
-        cache.getElections().add(election.getId(), election);
+        Cache<UUID, Election> ec = cache.getElections();
+        
+        ec.remove(election.getId());
+        ec.add(election.getId(), election);
         electionsTable.removeWhere("name", election)
                 .thenRun(() -> electionsTable.add(election));
     }

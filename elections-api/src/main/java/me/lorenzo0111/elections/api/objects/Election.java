@@ -63,12 +63,13 @@ public class Election implements DatabaseSerializable {
     }
 
     public Boolean deleteParty(String name) {
-        Boolean deleted = parties.remove(name) != null;
-
-        if (deleted) {
-            Getters.database().updateElection(this);
+        if (parties.remove(name) == null) {
+            return false;
         }
-        return deleted;
+
+        Getters.database().updateElection(this);
+
+        return true;
     }
             
     public void addParty(Party party) {

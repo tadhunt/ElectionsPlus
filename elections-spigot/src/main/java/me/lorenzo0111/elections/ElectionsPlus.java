@@ -164,6 +164,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                                 }
                             });
                         eclaim.delete();
+                        this.getManager().deleteParty(eclaim.getName());
                         continue;
                     }
 
@@ -208,40 +209,44 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             return;
         }
 
-        Map<String, Party> parties = this.getCache().getParties().map();
-        Party party = parties.get(name);
-
-        if (party == null) {
-            this.getManager().createParty(name, new UUID(0, 0))
-                .thenAccept((newParty) -> {
-                    if (newParty == null) {
-                        this.getLogger().warning("party " + name + ": creation failed.");
-                        return;
-                    }
-                    addPartyToOpenElections(newParty);
-                });
-            return;
-        }
-
-        addPartyToOpenElections(party);
+        this.getManager().getParty(name)
+            .thenAccept((party) -> {
+                if (party == null) {
+                    this.getLogger().info(String.format("claimPartyUpdate[party %s]: creating new party.", name));
+                    this.getManager().createParty(name, new UUID(0, 0))
+                        .thenAccept((newParty) -> {
+                            if (newParty == null) {
+                                this.getLogger().severe(String.format("claimPartyUpdate[party %s]: create party failed.", name));
+                                return;
+                            }
+                            this.getLogger().info(String.format("claimPartyUpdate[party %s]: party created.", name));
+                            addPartyToElections(newParty);
+                        });
+                    return;
+                }
+                addPartyToElections(party);
+            });
     }
 
-    private void addPartyToOpenElections(Party party) {
-        Cache<UUID, Election> elections = this.getCache().getElections();
-        for (Election election : elections.map().values()) {
-            if (!election.isOpen()) {
-                this.getLogger().info(String.format("election %s: skip (closed)", election.getName()));
-                continue;
-            }
+    private void addPartyToElections(Party party) {
+        this.getLogger().info(String.format("addPartyToElections[party %s]: adding to all open elections.", party.getName()));
+        this.getManager().getElections()
+            .thenAccept((elections) -> {
+                for (Election election : elections) {
+                    if (!election.isOpen()) {
+                        this.getLogger().info(String.format("claimPartyUpdate[party %s]: election %s: skip (closed).", party.getName(), election.getName()));
+                        continue;
+                    }
 
-            if (election.getParty(party.getName()) != null) {
-                this.getLogger().info(String.format("election %s: party %s already added", election.getName(), party.getName()));
-                continue;
+                    if (election.getParty(party.getName()) != null) {
+                        this.getLogger().info(String.format("claimPartyUpdate[party %s]: election %s: skip (party already present).", party.getName(), election.getName()));
+                        continue;
+                    }
 
-            }
-
-            election.addParty(party);
-        }
+                    election.addParty(party);
+                    this.getLogger().info(String.format("claimPartyUpdate[party %s]: election %s: added party.", party.getName(), election.getName()));
+                }
+            });
     }
 
     // called by CacheTask every time the cache is reloaded

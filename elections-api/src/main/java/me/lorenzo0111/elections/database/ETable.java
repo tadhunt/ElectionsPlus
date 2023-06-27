@@ -78,10 +78,8 @@ public class ETable {
     public void setUnique(String indexName, String columnName) {
         try {
             Statement statement = connection.getConnection().createStatement();
-            ResultSet resultSet = statement.executeQuery(String.format("CREATE UNIQUE INDEX %s ON %s(%s);", indexName, name, columnName));
-            while (resultSet.next()) {
-                logger.warning(String.format("setUnique[%s.%%s]: %s", indexName, columnName, resultSet.toString()));
-            }
+            statement.executeUpdate(String.format("CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(%s);", indexName, name, columnName));
+            statement.close();
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
