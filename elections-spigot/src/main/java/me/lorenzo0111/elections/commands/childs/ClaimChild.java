@@ -25,8 +25,9 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
-import me.lorenzo0111.elections.api.objects.EClaim;
+import me.lorenzo0111.elections.api.objects.DBClaim;
 import me.lorenzo0111.elections.handlers.Messages;
+import me.lorenzo0111.elections.listeners.ClaimListener;
 import me.lorenzo0111.pluginslib.audience.User;
 import me.lorenzo0111.pluginslib.command.Command;
 import me.lorenzo0111.pluginslib.command.SubCommand;
@@ -35,15 +36,19 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.bukkit.entity.Player;
 
 public class ClaimChild extends SubCommand {
     private final ElectionsPlus plugin;
+    //private final ClaimListener listener;
     
     public ClaimChild(Command command, ElectionsPlus plugin) {
         super(command);
         this.plugin = plugin;
+        new ClaimListener(plugin);
     }
 
     @Override
@@ -54,6 +59,12 @@ public class ClaimChild extends SubCommand {
     @Permission("elections.create")
     @Override
     public void handleSubcommand(User<?> sender, String[] args) {
+        GriefPrevention gp = plugin.getGriefPrevention();
+        if (gp == null) {
+            Messages.send(sender.audience(), true, "claim", "gp-disabled");
+            return;
+        }
+
         if (!(sender.player() instanceof Player)) {
             Messages.send(sender.audience(), true, "errors", "console");
             return;
@@ -67,18 +78,22 @@ public class ClaimChild extends SubCommand {
 
         if (args[1].equalsIgnoreCase("create")) {
             ArrayList<String> a = plugin.unquote(args, 2);
-            if (a.size() < 2) {
+            if (a.size() != 1) {
                 Messages.send(sender.audience(), true, "errors", "bad-args");
                 return;
             }
 
+            String name = a.get(0);
             Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), false, null);
-            String name = a.remove(0);
+            if (claim == null) {
+                Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "create-no-claim-here");
+                return;
+            }
 
             plugin.getManager().createClaim(name, claim)
                 .thenAccept((eclaim) -> {
                     if (eclaim == null) {
-                        Messages.send(sender.audience(), true, "claim", "create-fail");
+                        Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "create-fail");
                     } else {
                         Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "created");
                     }
@@ -107,7 +122,7 @@ public class ClaimChild extends SubCommand {
                             if (success) {
                                 Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "deleted");
                             } else {
-                                Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "not-deleted");
+                                Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "delete-fail");
                             }
                         });
                 });
@@ -116,8 +131,14 @@ public class ClaimChild extends SubCommand {
         if (args[1].equalsIgnoreCase("list")) {
             plugin.getManager().getClaims()
                 .thenAccept((claims) -> {
-                    for (EClaim claim : claims.values()) {
-                        Messages.send(sender.audience(), true, Messages.multiple("name", claim.getName()), "claim", "list");
+                    plugin.getLogger().severe(String.format("GOT %d CLAIMS", claims.size()));
+                    Map <String, String> placeholders = new HashMap<String, String>();
+                    for (DBClaim claim : claims.values()) {
+                        placeholders.put("name", claim.getName());
+                        placeholders.put("id", claim.getId().toString());
+                        placeholders.put("owner", claim.getOwner() == null ? "admin" : claim.getOwner().toString());
+
+                        Messages.send(sender.audience(), true, placeholders, "claim", "list");
                     }
                 });
 

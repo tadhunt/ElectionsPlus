@@ -24,7 +24,7 @@
 
 package me.lorenzo0111.elections.database;
 
-import me.lorenzo0111.elections.api.objects.EClaim;
+import me.lorenzo0111.elections.api.objects.DBClaim;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
@@ -67,10 +67,10 @@ public interface IDatabaseManager {
     void deleteHologram(String name);
     void updateHologram(DBHologram hologram);
 
-    CompletableFuture<Map<String, EClaim>> getClaims();
-    CompletableFuture<EClaim> getClaimById(Long id);
-    CompletableFuture<EClaim> getClaimByName(String name);
-    CompletableFuture<EClaim> createClaim(String name, Claim claim);
-    CompletableFuture<Boolean> deleteClaim(EClaim claim);
-    void updateClaim(EClaim claim);
+    CompletableFuture<Map<String, DBClaim>> getClaims();
+    CompletableFuture<DBClaim> getClaimById(Long id);
+    CompletableFuture<DBClaim> getClaimByName(String name);
+    CompletableFuture<DBClaim> createClaim(String name, Claim claim);
+    CompletableFuture<Boolean> deleteClaim(DBClaim claim);
+    void updateClaim(DBClaim claim);
 }

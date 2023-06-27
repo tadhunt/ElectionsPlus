@@ -226,3 +226,16 @@ hologram-status:
   closed-winner :   "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes cast. Winner <green><winner><white>!"
   closed-tie:       "<yellow><name><gray> » <state><gray> » <yellow><totalvotes> <white>votes cast. Tie between <green><winner><white>!"
 
+#
+# Placeholders
+# name - Claim name
+#
+claim:
+  gp-disabled: "<red>Claims commands disabled: enable GriefPrevention to use."
+  create-no-claim-here: "<red>Claim <yellow><name><red> no claim found at player location."
+  create-fail: "<red>Claim <yellow><name><red> creation failed."
+  created: "<green>Claim <yellow><name><green> created."
+  not-found: "<red>Claim <yellow><name><red> not found."
+  delete-fail: "<red>Claim <yellow><name><red> deletion failed."
+  deleted: "<green>Claim <yellow><name><green> deleted."
+  list: "<gray>Claim <yellow><name><gray> » id <yellow><id><gray> » owner <yellow><owner><gray>."

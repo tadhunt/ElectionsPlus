@@ -24,11 +24,13 @@
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 
 }
 
 dependencies {
     implementation project(':elections-api')
+    compileOnly('com.github.TechFortress:GriefPrevention:16.18')
     implementation("com.google.guava:guava:31.1-jre")
     implementation('com.google.code.gson:gson:2.10.1')
     implementation('space.rocketplugins.pluginslib:common:2.0.3.2')

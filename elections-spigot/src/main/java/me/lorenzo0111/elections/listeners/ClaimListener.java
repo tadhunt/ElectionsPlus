@@ -1,40 +1,44 @@
 package me.lorenzo0111.elections.listeners;
 
-import java.util.logging.Logger;
+import java.util.UUID;
 
-import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
 import me.lorenzo0111.elections.ElectionsPlus;
-import me.lorenzo0111.elections.api.objects.EClaim;
-import me.ryanhamshire.GriefPrevention.Claim;
-import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.events.ClaimPermissionCheckEvent;
 
-public class ClaimListener {
-    private ElectionsPlus plugin;
-    private Logger logger;
+public class ClaimListener implements Listener {
+    private final ElectionsPlus plugin;
 
-    ClaimListener(ElectionsPlus plugin, Logger logger) {
+    public ClaimListener(ElectionsPlus plugin) {
         this.plugin = plugin;
-        this.logger = logger;
+
+        plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
 
     @EventHandler
     public void onClaimPermission(ClaimPermissionCheckEvent event) {
-        Player player = event.getCheckedPlayer();
-        Claim claim = event.getClaim();
-        plugin.getManager().getClaimById(claim.getID())
+        Long id = event.getClaim().getID();
+        UUID newOwner = event.getCheckedUUID();
+
+        plugin.getLogger().info(String.format("onClaimPermission: claim %d newOwner %s", id, newOwner == null ? "admin" : newOwner.toString()));
+
+        plugin.getManager().getClaimById(id)
             .thenAccept((eclaim) -> {
                 if (eclaim == null) {
                     return;
                 }
-                if (claim.isAdminClaim()) {
+                if (eclaim.getOwner().equals(newOwner)) {
+                    return;
                 }
+
+                eclaim.setOwner(newOwner);
             });
     }
 
     @EventHandler
     public void onClaimDeleted(ClaimPermissionCheckEvent event) {
+        plugin.getLogger().info("onClaimDeleted: unimplemented");
     }
 }

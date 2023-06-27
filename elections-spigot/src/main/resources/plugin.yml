@@ -2,8 +2,8 @@ name: ElectionsPlus
 version: @version@
 main: me.lorenzo0111.elections.ElectionsPlus
 api-version: 1.13
-authors: [ Lorenzo0111 ]
+authors: [ Lorenzo0111, tadhunt ]
 commands:
   elections:
     description: Main command
-softdepend: [PlaceholderAPI, HolographicDisplays, GriefPrevention]
+softdepend: [RealEstate, GriefPrevention, PlaceholderAPI, HolographicDisplays]

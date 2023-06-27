@@ -44,9 +44,8 @@ import me.lorenzo0111.pluginslib.audience.BukkitAudienceManager;
 import me.lorenzo0111.pluginslib.command.Customization;
 import me.lorenzo0111.pluginslib.config.ConfigExtractor;
 import me.lorenzo0111.pluginslib.database.connection.SQLiteConnection;
-import me.lorenzo0111.pluginslib.dependency.DependencyManager;
 import me.lorenzo0111.pluginslib.updater.UpdateChecker;
-
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import net.milkbowl.vault.permission.Permission;
 
 import org.bstats.bukkit.Metrics;
@@ -61,8 +60,6 @@ import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -83,7 +80,8 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     private Permission permissions;
     private HashMap<String, ElectionsHologram> holograms;
-    HolographicDisplaysAPI holoApi;
+    private HolographicDisplaysAPI holoApi;
+    private GriefPrevention gp;
 
     @Override
     public void onEnable() {
@@ -116,12 +114,12 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
 
         if (Bukkit.getPluginManager().isPluginEnabled("GriefPrevention")) {
+            this.gp = GriefPrevention.instance;
             this.getLogger().info("GriefPrevention integration enabled.");
         } else {
+            this.gp = null;
             this.getLogger().info("GriefPrevention integration disabled: add GriefPrevention plugin to enable.");
-
         }
-
     }
 
     @Override
@@ -227,6 +225,12 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     private void load() {
         try {
+            this.start();
+        } catch (ConfigurateException e) {
+            e.printStackTrace();
+        }
+/*
+        try {
             this.getLogger().info("Loading libraries..");
             this.getLogger().info("Note: This might take a few minutes on first run.");
 
@@ -237,6 +241,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         } catch (ReflectiveOperationException | URISyntaxException | NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
+*/
     }
 
     public void reload() throws ConfigurateException {
@@ -440,5 +445,9 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
 
         return null;
+    }
+
+    public GriefPrevention getGriefPrevention() {
+        return gp;
     }
 }
