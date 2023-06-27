@@ -87,7 +87,7 @@ public class ClaimsChild extends SubCommand {
             }
 
             String name = a.get(0);
-            Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), false, null);
+            Claim claim = gp.dataStore.getClaimAt(player.getLocation(), false, null);
             if (claim == null) {
                 Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "create-no-claim-here");
                 return;
@@ -134,7 +134,6 @@ public class ClaimsChild extends SubCommand {
         if (args[1].equalsIgnoreCase("list")) {
             plugin.getManager().getClaims()
                 .thenAccept((claims) -> {
-                    plugin.getLogger().severe(String.format("GOT %d CLAIMS", claims.size()));
                     Map <String, String> placeholders = new HashMap<String, String>();
                     for (EClaim claim : claims.values()) {
                         placeholders.put("name", claim.getName());

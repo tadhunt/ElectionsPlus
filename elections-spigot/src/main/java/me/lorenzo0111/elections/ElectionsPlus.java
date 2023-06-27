@@ -30,6 +30,7 @@ import me.lorenzo0111.elections.api.implementations.ElectionsPlusAPI;
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.CacheEventHandler;
 import me.lorenzo0111.elections.api.objects.DBHologram;
+import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.cache.CacheManager;
@@ -45,6 +46,7 @@ import me.lorenzo0111.pluginslib.command.Customization;
 import me.lorenzo0111.pluginslib.config.ConfigExtractor;
 import me.lorenzo0111.pluginslib.database.connection.SQLiteConnection;
 import me.lorenzo0111.pluginslib.updater.UpdateChecker;
+import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import net.milkbowl.vault.permission.Permission;
 
@@ -116,6 +118,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         if (Bukkit.getPluginManager().isPluginEnabled("GriefPrevention")) {
             this.gp = GriefPrevention.instance;
             this.getLogger().info("GriefPrevention integration enabled.");
+            claimsInit();
         } else {
             this.gp = null;
             this.getLogger().info("GriefPrevention integration disabled: add GriefPrevention plugin to enable.");
@@ -142,13 +145,66 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
          Messages.close();
     }
 
-    // called by CacheTask every time the cache is reloaded
-    public void onCacheReloaded() {
-        if (this.holoApi == null) {
-            // holograms api not enabled
+    private void claimsInit() {
+        IDatabaseManager manager = this.getManager();
+
+        manager.getClaims()
+            .thenAccept((eclaims) -> {
+                for (EClaim eclaim : eclaims.values()) {
+                    Claim gclaim = gp.dataStore.getClaim(eclaim.getId());
+
+                    if (gclaim == null) {
+                        manager.deleteClaim(eclaim)
+                            .thenAccept((success) -> {
+                                if (success) {
+                                    this.getLogger().info(String.format("claimsInit: GP claim %d deleted, deleted claim %s", eclaim.getId(), eclaim.getName()));
+                                } else {
+                                    this.getLogger().info(String.format("claimsInit: GP claim %d deleted, failed to delete claim %s", eclaim.getId(), eclaim.getName()));
+                                }
+                            });
+                        eclaim.delete();
+                        continue;
+                    }
+
+                    claimTransfer(gclaim, eclaim, gclaim.getOwnerID());
+                }
+            });
+    }
+        
+    public void claimTransfer(Claim gclaim, EClaim eclaim, UUID newOwner) {
+        Long id = gclaim.getID();
+
+        if (eclaim == null) {
+            this.getLogger().info(String.format("claimTransfer[claim %d]: no corresponding elections claim", id));
             return;
         }
 
+        UUID oldOwner = eclaim.getOwner();
+        String ename = eclaim.getName();
+
+        if (oldOwner == null && newOwner == null) {
+            this.getLogger().info(String.format("claimTransfer[claim %d/%s]: owner (admin) unchanged", id, ename));
+            return;
+        } else if (oldOwner == null) {
+            this.getLogger().info(String.format("claimTransfer[claim %d/%s]: owner changed admin -> %s/%s", id, ename, newOwner.toString(), Bukkit.getOfflinePlayer(newOwner).getName()));
+        } else if (newOwner == null) {
+            this.getLogger().info(String.format("claimTransfer[claim %d/%s]: owner changed %s/%s -> admin", id, ename, oldOwner.toString(), Bukkit.getOfflinePlayer(oldOwner).getName()));
+        } else if (oldOwner.equals(newOwner)) {
+            this.getLogger().info(String.format("claimTransfer[claim %d/%s]: owner (%s/%s) unchanged", id, ename, newOwner.toString(), Bukkit.getOfflinePlayer(newOwner).getName()));
+            return;
+        }
+
+        eclaim.setOwner(newOwner);
+    }
+
+    // called by CacheTask every time the cache is reloaded
+    public void onCacheReloaded() {
+        if (this.holoApi != null) {
+            holoReset();
+        }
+    }
+
+    private void holoReset() {
         if (this.holograms == null) {
             // first time: create holograms
 
@@ -163,7 +219,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                             holograms.put(hologram.getName(), hologram);
                         }
                     } catch (Exception e) {
-                        this.getLogger().severe("holoInit: " + e.toString());
+                        this.getLogger().severe("holoReset: " + e.toString());
                     }
                 });
             });
