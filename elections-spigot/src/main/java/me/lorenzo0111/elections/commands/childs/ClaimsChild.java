@@ -44,11 +44,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
-public class ClaimChild extends SubCommand {
+public class ClaimsChild extends SubCommand {
     private final ElectionsPlus plugin;
     //private final ClaimListener listener;
     
-    public ClaimChild(Command command, ElectionsPlus plugin) {
+    public ClaimsChild(Command command, ElectionsPlus plugin) {
         super(command);
         this.plugin = plugin;
         new ClaimListener(plugin);
@@ -56,7 +56,7 @@ public class ClaimChild extends SubCommand {
 
     @Override
     public String getName() {
-        return "claim";
+        return "claims";
     }
 
     @Permission("elections.create")
@@ -64,7 +64,7 @@ public class ClaimChild extends SubCommand {
     public void handleSubcommand(User<?> sender, String[] args) {
         GriefPrevention gp = plugin.getGriefPrevention();
         if (gp == null) {
-            Messages.send(sender.audience(), true, "claim", "gp-disabled");
+            Messages.send(sender.audience(), true, "claims", "gp-disabled");
             return;
         }
 
@@ -89,16 +89,16 @@ public class ClaimChild extends SubCommand {
             String name = a.get(0);
             Claim claim = GriefPrevention.instance.dataStore.getClaimAt(player.getLocation(), false, null);
             if (claim == null) {
-                Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "create-no-claim-here");
+                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "create-no-claim-here");
                 return;
             }
 
             plugin.getManager().createClaim(name, claim, claim.getOwnerID())
                 .thenAccept((eclaim) -> {
                     if (eclaim == null) {
-                        Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "create-fail");
+                        Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "create-fail");
                     } else {
-                        Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "created");
+                        Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "created");
                     }
                 });
 
@@ -116,16 +116,16 @@ public class ClaimChild extends SubCommand {
             plugin.getManager().getClaimByName(name)
                 .thenAccept((claim) -> {
                     if (claim == null) {
-                        Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "not-found");
+                        Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "not-found");
                         return;
                     }
 
                     plugin.getManager().deleteClaim(claim)
                         .thenAccept((success) -> {
                             if (success) {
-                                Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "deleted");
+                                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "deleted");
                             } else {
-                                Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "delete-fail");
+                                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "delete-fail");
                             }
                         });
                 });
@@ -152,7 +152,7 @@ public class ClaimChild extends SubCommand {
                             }
                         }
 
-                        Messages.send(sender.audience(), true, placeholders, "claim", "list");
+                        Messages.send(sender.audience(), true, placeholders, "claims", "list");
                     }
                 });
 

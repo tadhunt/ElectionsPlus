@@ -182,6 +182,7 @@ help:
   proceed:    "<blue>elections proceed <name> <gray>» Calculate the election winner"
   vote-block: "<blue>elections vote-block create|delete <gray>» Toggles the block at crosshairs opening the voting menu"
   holo:       "<blue>election holo create <name> \"<line 1>\" [\"line 2\"]... | delete <name> | list | refresh <gray>» hologram tools"
+  claims:      "<blue>election claims create <name> | delete <name> | list"
 
 #
 # Placeholders
@@ -228,9 +229,11 @@ hologram-status:
 
 #
 # Placeholders
-# name - Claim name
+# name -  Claim name
+# id   -  Claim id
+# owner - Claim owner
 #
-claim:
+claims:
   gp-disabled: "<red>Claims commands disabled: enable GriefPrevention to use."
   create-no-claim-here: "<red>Claim <yellow><name><red> no claim found at player location."
   create-fail: "<red>Claim <yellow><name><red> creation failed."
