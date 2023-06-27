@@ -36,21 +36,17 @@ import com.google.gson.Gson;
 
 import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
+import me.ryanhamshire.GriefPrevention.Claim;
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
-public class DBClaim implements DatabaseSerializable {
+public class EClaim implements DatabaseSerializable {
     private String name;
-    private Long id;
     private UUID owner;
+    private Claim claim;
 
-    public DBClaim(String name, Long id) {
+    public EClaim(String name, Claim claim, UUID owner) {
         this.name = name;
-        this.id = id;
-        this.owner = null;
-    }
-
-    public DBClaim(String name, Long id, UUID owner) {
-        this.name = name;
-        this.id = id;
+        this.claim = claim;
         this.owner = owner;
     }
 
@@ -59,7 +55,7 @@ public class DBClaim implements DatabaseSerializable {
     }
 
     public Long getId() {
-        return id;
+        return claim.getID();
     }
 
     public UUID getOwner() {
@@ -75,7 +71,7 @@ public class DBClaim implements DatabaseSerializable {
         Getters.database().deleteClaim(this);
     }
 
-    public static DBClaim fromResultSet(ResultSet resultSet) {
+    public static EClaim fromResultSet(ResultSet resultSet) {
         try {
             String name = resultSet.getString("name");
             Long id = Long.parseLong(resultSet.getString("id"));
@@ -85,7 +81,12 @@ public class DBClaim implements DatabaseSerializable {
                 owner = UUID.fromString(ownerString);
             }
 
-            return new DBClaim(name, id, owner);
+            Claim claim = GriefPrevention.instance.dataStore.getClaim(id);
+            if (claim == null) {
+                return null;
+            }
+
+            return new EClaim(name, claim, owner);
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -103,7 +104,12 @@ public class DBClaim implements DatabaseSerializable {
             owner = UUID.fromString(ownerString);
         }
 
-        return new DBClaim(name, id, owner);
+        Claim claim = GriefPrevention.instance.dataStore.getClaim(id);
+        if (claim == null) {
+            return null;
+        }
+
+        return new EClaim(name, claim, owner);
     }
 
     @Override
@@ -116,7 +122,7 @@ public class DBClaim implements DatabaseSerializable {
         Map<String, Object> map = new HashMap<>();
 
         map.put("name", name);
-        map.put("id", id.toString());
+        map.put("id", claim.getID().toString());
         if (owner == null) {
             map.put("owner", "admin");
         } else {

@@ -30,7 +30,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import me.lorenzo0111.elections.api.objects.Cache;
-import me.lorenzo0111.elections.api.objects.DBClaim;
+import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
@@ -437,26 +437,29 @@ public class DatabaseManager implements IDatabaseManager {
     public CompletableFuture<Boolean> vote(Vote vote) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
-        this.getVotesTable()
-                .find("player", vote.getPlayer())
-                .thenAccept((set) -> {
-                    try {
-                        while (set.next()) {
-                            UUID electionId = UUID.fromString(set.getString("electionId"));
-                            if (electionId.equals(vote.getElectionId())) {
-                                future.complete(false);
-                                return;
-                            }
-                        }
+        getVotesTable().run(() -> {
+                try {
+                    Statement statement = connectionHandler.getConnection().createStatement();
+                    String query = String.format("SELECT * FROM %s WHERE player = '%s' AND electionId = '%s';",
+                        getVotesTable().getName(), vote.getPlayer().toString(), vote.getElectionId().toString());
+                    ResultSet resultSet = statement.executeQuery(query);
 
-                        this.getVotesTable().add(vote);
-                        cache.getVotes().add(vote.getCacheKey(), vote);
-                        future.complete(true);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
+                    if (resultSet.next()) {
                         future.complete(false);
+                        return;
                     }
-                });
+
+                    this.getVotesTable().add(vote);
+                    cache.getVotes().add(vote.getCacheKey(), vote);
+                    future.complete(true);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    future.complete(false);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    future.complete(false);
+                }
+            });
 
         return future;
     }
@@ -496,7 +499,7 @@ public class DatabaseManager implements IDatabaseManager {
 
     @Override
     public CompletableFuture<ElectionBlock> createElectionBlock(UUID world, Map<String, Object> location, String blockData) {
-        CompletableFuture<ElectionBlock> electionBlockFuture = new CompletableFuture<>();
+        CompletableFuture<ElectionBlock> future = new CompletableFuture<>();
 
         blocksTable.find("location", location)
                 .thenAccept((resultSet) -> {
@@ -504,20 +507,20 @@ public class DatabaseManager implements IDatabaseManager {
                         while (resultSet.next()) {
                             UUID w = UUID.fromString(resultSet.getString("world"));
                             if (w.equals(world)) {
-                                electionBlockFuture.complete(null);
+                                future.complete(null);
                                 return;
                             }
                         }
 
                         ElectionBlock electionBlock = new ElectionBlock(world, location, blockData);
                         blocksTable.add(electionBlock);
-                        electionBlockFuture.complete(electionBlock);
+                        future.complete(electionBlock);
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
                 });
 
-        return electionBlockFuture;
+        return future;
     }
 
     @Override
@@ -590,8 +593,8 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public CompletableFuture<DBClaim> createClaim(String name, Claim gclaim) {
-        CompletableFuture<DBClaim> future = new CompletableFuture<>();
+    public CompletableFuture<EClaim> createClaim(String name, Claim gclaim, UUID owner) {
+        CompletableFuture<EClaim> future = new CompletableFuture<>();
 
         getClaimsTable().run(() -> {
             try {
@@ -603,23 +606,24 @@ public class DatabaseManager implements IDatabaseManager {
                         future.complete(null);
                         return;
                 }
+
+                EClaim eclaim = new EClaim(name, gclaim, owner);
+                claimsTable.add(eclaim);
+                future.complete(eclaim);
             } catch (SQLException e) {
                 future.complete(null);
                 e.printStackTrace();
                 return;
             }
 
-            DBClaim eclaim = new DBClaim(name, gclaim.getID());
-            claimsTable.add(eclaim);
-            future.complete(eclaim);
         });
 
         return future;
     }
 
     @Override
-    public CompletableFuture<Map<String, DBClaim>> getClaims() {
-        CompletableFuture<Map<String, DBClaim>> future = new CompletableFuture<>();
+    public CompletableFuture<Map<String, EClaim>> getClaims() {
+        CompletableFuture<Map<String, EClaim>> future = new CompletableFuture<>();
 
         getClaimsTable().run(() -> {
             try {
@@ -627,10 +631,10 @@ public class DatabaseManager implements IDatabaseManager {
                 String query = String.format("SELECT * FROM %s;", getClaimsTable().getName());
                 ResultSet resultSet = statement.executeQuery(query);
 
-                HashMap<String, DBClaim> claims = new HashMap<String, DBClaim>();
+                HashMap<String, EClaim> claims = new HashMap<String, EClaim>();
 
                 while (resultSet.next()) {
-                    DBClaim claim = DBClaim.fromResultSet(resultSet);
+                    EClaim claim = EClaim.fromResultSet(resultSet);
                     claims.put(claim.getName(), claim);
                 }
 
@@ -644,16 +648,16 @@ public class DatabaseManager implements IDatabaseManager {
         return future;
     }
 
-    public CompletableFuture<DBClaim> getClaimById(Long id) {
+    public CompletableFuture<EClaim> getClaimById(Long id) {
         return getClaim("id", id.toString());
     }
 
-    public CompletableFuture<DBClaim> getClaimByName(String name) {
+    public CompletableFuture<EClaim> getClaimByName(String name) {
         return getClaim("name", name);
     }
 
-    private CompletableFuture<DBClaim> getClaim(String key, String value) {
-        CompletableFuture<DBClaim> future = new CompletableFuture<>();
+    private CompletableFuture<EClaim> getClaim(String key, String value) {
+        CompletableFuture<EClaim> future = new CompletableFuture<>();
 
         getClaimsTable().run(() -> {
             try {
@@ -662,10 +666,10 @@ public class DatabaseManager implements IDatabaseManager {
                 ResultSet resultSet = statement.executeQuery(query);
 
                 Integer nClaims = 0;
-                DBClaim claim = null;
+                EClaim claim = null;
 
                 while (resultSet.next()) {
-                    claim = DBClaim.fromResultSet(resultSet);
+                    claim = EClaim.fromResultSet(resultSet);
                     nClaims++;
                 }
 
@@ -686,7 +690,7 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteClaim(DBClaim claim) {
+    public CompletableFuture<Boolean> deleteClaim(EClaim claim) {
         CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
         claimsTable.removeWhere("id", claim.getId().toString())
             .thenAccept((result) -> {
@@ -706,9 +710,9 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public void updateClaim(DBClaim claim) {
+    public void updateClaim(EClaim claim) {
         claimsTable
-            .removeWhere("name", claim.getName())
+            .removeWhere("id", claim.getId().toString())
             .thenRun(() -> claimsTable.add(claim));
     }
 }

@@ -25,7 +25,7 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
-import me.lorenzo0111.elections.api.objects.DBClaim;
+import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.elections.listeners.ClaimListener;
 import me.lorenzo0111.pluginslib.audience.User;
@@ -38,7 +38,10 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 public class ClaimChild extends SubCommand {
@@ -90,7 +93,7 @@ public class ClaimChild extends SubCommand {
                 return;
             }
 
-            plugin.getManager().createClaim(name, claim)
+            plugin.getManager().createClaim(name, claim, claim.getOwnerID())
                 .thenAccept((eclaim) -> {
                     if (eclaim == null) {
                         Messages.send(sender.audience(), true, Messages.single("name", name), "claim", "create-fail");
@@ -133,10 +136,21 @@ public class ClaimChild extends SubCommand {
                 .thenAccept((claims) -> {
                     plugin.getLogger().severe(String.format("GOT %d CLAIMS", claims.size()));
                     Map <String, String> placeholders = new HashMap<String, String>();
-                    for (DBClaim claim : claims.values()) {
+                    for (EClaim claim : claims.values()) {
                         placeholders.put("name", claim.getName());
                         placeholders.put("id", claim.getId().toString());
-                        placeholders.put("owner", claim.getOwner() == null ? "admin" : claim.getOwner().toString());
+
+                        UUID owner = claim.getOwner();
+                        if (owner == null) {
+                            placeholders.put("owner", "Admin");
+                        } else {
+                            OfflinePlayer p = Bukkit.getOfflinePlayer(owner);
+                            if (p == null) {
+                                placeholders.put("owner", owner.toString());
+                            } else {
+                                placeholders.put("owner", p.getName());
+                            }
+                        }
 
                         Messages.send(sender.audience(), true, placeholders, "claim", "list");
                     }
