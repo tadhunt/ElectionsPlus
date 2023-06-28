@@ -39,22 +39,30 @@ import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
-public class EClaim implements DatabaseSerializable {
+public class EClaim implements DatabaseSerializable, ICacheEntry {
+    private UUID id;
     private String name;
     private UUID owner;
     private Claim claim;
+    private boolean dirty;
 
-    public EClaim(String name, Claim claim, UUID owner) {
+    public EClaim(UUID id, String name, Claim claim, UUID owner, boolean dirty) {
+        this.id = id;
         this.name = name;
         this.claim = claim;
         this.owner = owner;
+        this.dirty = dirty;
     }
 
     public String getName() {
         return name;
     }
 
-    public Long getId() {
+    public UUID getId() {
+        return id;
+    }
+
+    public Long getGpId() {
         return claim.getID();
     }
 
@@ -64,29 +72,26 @@ public class EClaim implements DatabaseSerializable {
 
     public void setOwner(UUID owner) {
         this.owner = owner;
-        Getters.database().updateClaim(this);
-    }
-
-    public void delete() {
-        Getters.database().deleteClaim(this);
+        this.dirty = true;
     }
 
     public static EClaim fromResultSet(ResultSet resultSet) {
         try {
+            UUID id = UUID.fromString(resultSet.getString("id"));
             String name = resultSet.getString("name");
-            Long id = Long.parseLong(resultSet.getString("id"));
+            Long gpid = Long.parseLong(resultSet.getString("gpid"));
             UUID owner = null;
             String ownerString = resultSet.getString("owner");
             if (!ownerString.equals("admin")) {
                 owner = UUID.fromString(ownerString);
             }
 
-            Claim claim = GriefPrevention.instance.dataStore.getClaim(id);
+            Claim claim = GriefPrevention.instance.dataStore.getClaim(gpid);
             if (claim == null) {
                 return null;
             }
 
-            return new EClaim(name, claim, owner);
+            return new EClaim(id, name, claim, owner, false);
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
@@ -95,21 +100,21 @@ public class EClaim implements DatabaseSerializable {
 
     @Override
     public DatabaseSerializable from(Map<String, Object> keys) {
+        UUID id = UUID.fromString((String) keys.get("id"));
         String name = (String) keys.get("name");
-        Long id = Long.parseLong((String) keys.get("id"));
-
+        Long gpid = Long.parseLong((String) keys.get("gpid"));
         UUID owner = null;
         String ownerString = (String) keys.get("owner");
         if (!ownerString.equals("admin")) {
             owner = UUID.fromString(ownerString);
         }
 
-        Claim claim = GriefPrevention.instance.dataStore.getClaim(id);
+        Claim claim = GriefPrevention.instance.dataStore.getClaim(gpid);
         if (claim == null) {
             return null;
         }
 
-        return new EClaim(name, claim, owner);
+        return new EClaim(id, name, claim, owner, false);
     }
 
     @Override
@@ -121,8 +126,9 @@ public class EClaim implements DatabaseSerializable {
     public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
 
+        map.put("id", id.toString());
         map.put("name", name);
-        map.put("id", claim.getID().toString());
+        map.put("gpid", claim.getID().toString());
         if (owner == null) {
             map.put("owner", "admin");
         } else {
@@ -136,5 +142,17 @@ public class EClaim implements DatabaseSerializable {
         Map<String, Object> m = this.serialize();
 
         return new Gson().toJson(m);
+    }
+
+    public boolean dirty() {
+        return dirty;
+    }
+
+    public void delete() {
+        Getters.database().deleteClaim(this);
+    }
+
+    public void update() {
+        Getters.database().updateClaim(this);
     }
 }

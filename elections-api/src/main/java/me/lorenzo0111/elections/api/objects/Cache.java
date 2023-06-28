@@ -26,7 +26,7 @@ package me.lorenzo0111.elections.api.objects;
 
 import java.util.Map;
 
-public interface Cache<K, V> {
+public interface Cache<K, V extends ICacheEntry> {
     int size();
     void reset();
     void add(K key, V value);
@@ -34,4 +34,6 @@ public interface Cache<K, V> {
     V remove(K key);
     V get(K key);
     Map<K, V> map();
+    void persist();
+    V findByName(String name);
 }

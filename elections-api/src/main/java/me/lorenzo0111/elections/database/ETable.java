@@ -1,7 +1,7 @@
 /*
- * This file is part of PluginsLib, licensed under the MIT License.
+ * Forked from Lorenzo0111 PluginsLib
  *
- * Copyright (c) Lorenzo0111
+ * Copyright (c) Lorenzo0111, tadhunt
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ public class ETable {
     private final IConnectionHandler connection;
     private final String name;
     private final List<Column> columns;
+    private final String REPLACE_START = "REPLACE INTO %s (";
 
     public ETable(Logger logger, IScheduler scheduler, IConnectionHandler connection, String name, List<Column> columns) {
         this.logger = logger;
@@ -144,13 +145,15 @@ public class ETable {
     }
 
     /**
-     * Add a {@link DatabaseSerializable} to the table
+     * Adds or replaces a {@link DatabaseSerializable} to the table
      * @param serializable Item to add to the table
      */
-    public void add(DatabaseSerializable serializable) {
+    public CompletableFuture<Boolean> addOrReplace(DatabaseSerializable serializable) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
         this.run(() -> {
             try {
-                StringBuilder builder = new StringBuilder(Queries.builder().query(Queries.INSERT_START).table(name).build());
+                StringBuilder builder = new StringBuilder(Queries.builder().query(REPLACE_START).table(name).build());
 
                 Map<String, Object> map = serializable.serialize();
 
@@ -182,10 +185,14 @@ public class ETable {
 
                 statement.executeUpdate();
                 statement.close();
+                future.complete(true);
             } catch (SQLException ex) {
                 ex.printStackTrace();
+                future.complete(false);
             }
         });
+
+        return future;
     }
 
     /**
@@ -209,34 +216,24 @@ public class ETable {
      * @param value Value of the key
      * @return A completable future with the amount of the affected tables
      */
-    public CompletableFuture<Object> removeWhere(String key, Object value) {
-        final CompletableFuture<Object> future = new CompletableFuture<>();
+    public CompletableFuture<Boolean> removeWhere(String key, Object value) {
+        final CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
 
         this.run(() -> {
             try {
                 final PreparedStatement statement = getConnection().prepareStatement(Queries.builder().query(Queries.DELETE_WHERE).table(name).keys(key).build());
                 statement.setObject(1, value);
 
-                Integer result = statement.executeUpdate();
-                future.complete(result);
+                statement.executeUpdate();
+                future.complete(true);
                 statement.close();
             } catch (SQLException e) {
                 e.printStackTrace();
-                future.complete(e.toString());
+                future.complete(false);
             }
         });
 
         return future;
-    }
-
-    /**
-     * Remove something from the table
-     * @param key key to find
-     * @param serializable serializable that contains the key
-     * @return A completable future with the amount of the affected tables
-     */
-    public CompletableFuture<Object> removeWhere(String key, DatabaseSerializable serializable) {
-        return this.removeWhere(key, serializable.serialize().get(key));
     }
 
     /**

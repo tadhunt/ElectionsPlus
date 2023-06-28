@@ -28,24 +28,27 @@ import java.util.UUID;
 
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.CacheEventHandler;
+import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.api.objects.Vote;
 
 public class CacheManager {
     private final CacheEventHandler eventHandler;
-    private final Cache<String, Party> parties;
+    private final Cache<UUID, Party> parties;
     private final Cache<UUID, Election> elections;
-    private final Cache<String, Vote> votes;
+    private final Cache<UUID, Vote> votes;
+    private final Cache<UUID, EClaim> claims;
 
     public CacheManager(CacheEventHandler eventHandler) {
         this.eventHandler = eventHandler;
         this.parties = new MapCache<>();
         this.elections = new MapCache<>();
         this.votes = new MapCache<>();
+        this.claims = new MapCache<>();
     }
 
-    public Cache<String, Party> getParties() {
+    public Cache<UUID, Party> getParties() {
         return parties;
     }
 
@@ -53,11 +56,22 @@ public class CacheManager {
         return elections;
     }
 
-    public Cache<String, Vote> getVotes() {
+    public Cache<UUID, Vote> getVotes() {
         return votes;
+    }
+
+    public Cache<UUID, EClaim> getClaims() {
+        return claims;
     }
 
     public CacheEventHandler getEventHandler() {
         return eventHandler;
+    }
+
+    public void persist() {
+        parties.persist();
+        elections.persist();
+        votes.persist();
+        claims.persist();
     }
 }

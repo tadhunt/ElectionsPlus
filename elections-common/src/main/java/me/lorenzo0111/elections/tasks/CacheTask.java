@@ -41,14 +41,15 @@ public class CacheTask implements Runnable {
 
     @Override
     public void run() {
+        int nCompletions = 4;
         AtomicInteger completions = new AtomicInteger(0);
         CompletableFuture<Boolean> reloaded = new CompletableFuture<Boolean>();
 
         database.getParties()
                 .thenAccept((parties) -> {
                     cache.getParties().reset();
-                    parties.values().forEach(party -> cache.getParties().add(party.getName(), party));
-                    if(completions.addAndGet(1) == 3) {
+                    parties.values().forEach(party -> cache.getParties().add(party.getId(), party));
+                    if(completions.addAndGet(1) == nCompletions) {
                         reloaded.complete(true);
                     }
                 });
@@ -57,7 +58,7 @@ public class CacheTask implements Runnable {
                 .thenAccept((elections) -> {
                     cache.getElections().reset();
                     elections.forEach(election -> cache.getElections().add(election.getId(), election));
-                    if(completions.addAndGet(1) == 3) {
+                    if(completions.addAndGet(1) == nCompletions) {
                         reloaded.complete(true);
                     }
                 });
@@ -65,8 +66,16 @@ public class CacheTask implements Runnable {
         database.getVotes()
                 .thenAccept((votes) -> {
                     cache.getVotes().reset();
-                    votes.forEach(vote -> cache.getVotes().add(vote.getVoteId().toString(), vote));
-                    if(completions.addAndGet(1) == 3) {
+                    votes.forEach(vote -> cache.getVotes().add(vote.getId(), vote));
+                    if(completions.addAndGet(1) == nCompletions) {
+                        reloaded.complete(true);
+                    }
+                });
+        database.getClaims()
+                .thenAccept((claims) -> {
+                    cache.getClaims().reset();
+                    claims.values().forEach(claim -> cache.getClaims().add(claim.getId(), claim));
+                    if(completions.addAndGet(1) == nCompletions) {
                         reloaded.complete(true);
                     }
                 });

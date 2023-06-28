@@ -147,25 +147,29 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
     }
 
     private void claimsInit() {
-        IDatabaseManager manager = this.getManager();
-
-        manager.getClaims()
-            .thenAccept((eclaims) -> {
-                for (EClaim eclaim : eclaims.values()) {
-                    Claim gclaim = gp.dataStore.getClaim(eclaim.getId());
-
-                    if (gclaim == null) {
-                        eclaim.delete();
-                        this.getManager().deleteParty(eclaim.getName());
-                        continue;
-                    }
-
-                    claimTransfer(gclaim, eclaim, gclaim.getOwnerID());
-                    claimPartyUpdate(eclaim);
-                }
-            });
+        claimOwnersInit();
+        claimPartiesInit();
+        getCache().persist();
     }
         
+    private void claimOwnersInit() {
+        Cache<UUID, EClaim> eclaims = getCache().getClaims();
+        Cache<UUID, Party> parties = getCache().getParties();
+
+        for (EClaim eclaim : eclaims.map().values()) {
+            Claim gclaim = gp.dataStore.getClaim(eclaim.getGpId());
+
+            if (gclaim == null) {
+                String name = eclaim.getName();
+                eclaims.remove(name);
+                parties.remove(name);
+                continue;
+            }
+
+            claimTransfer(gclaim, eclaim, gclaim.getOwnerID());
+        }
+    }
+
     public void claimTransfer(Claim gclaim, EClaim eclaim, UUID newOwner) {
         Long id = gclaim.getID();
 
@@ -192,32 +196,34 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         eclaim.setOwner(newOwner);
     }
 
-    private void claimPartyUpdate(EClaim eclaim) {
-        String name = eclaim.getName();
-        UUID owner = eclaim.getOwner();
+    private void claimPartiesInit() {
+        for (EClaim eclaim : getCache().getClaims().map().values()) {
+            String name = eclaim.getName();
+            UUID owner = eclaim.getOwner();
 
-        if (owner == null) {
-            this.getManager().deleteParty(name);
-            return;
+            if (owner == null) {
+                this.getManager().deleteParty(name);
+                continue;
+            }
+
+            this.getManager().getParty(name)
+                .thenAccept((party) -> {
+                    if (party == null) {
+                        this.getLogger().info(String.format("claimPartyUpdate[party %s]: creating new party.", name));
+                        this.getManager().createParty(name, new UUID(0, 0))
+                            .thenAccept((newParty) -> {
+                                if (newParty == null) {
+                                    this.getLogger().severe(String.format("claimPartyUpdate[party %s]: create party failed.", name));
+                                    return;
+                                }
+                                this.getLogger().info(String.format("claimPartyUpdate[party %s]: party created.", name));
+                                addPartyToElections(newParty);
+                            });
+                        return;
+                    }
+                    addPartyToElections(party);
+                });
         }
-
-        this.getManager().getParty(name)
-            .thenAccept((party) -> {
-                if (party == null) {
-                    this.getLogger().info(String.format("claimPartyUpdate[party %s]: creating new party.", name));
-                    this.getManager().createParty(name, new UUID(0, 0))
-                        .thenAccept((newParty) -> {
-                            if (newParty == null) {
-                                this.getLogger().severe(String.format("claimPartyUpdate[party %s]: create party failed.", name));
-                                return;
-                            }
-                            this.getLogger().info(String.format("claimPartyUpdate[party %s]: party created.", name));
-                            addPartyToElections(newParty);
-                        });
-                    return;
-                }
-                addPartyToElections(party);
-            });
     }
 
     private void addPartyToElections(Party party) {

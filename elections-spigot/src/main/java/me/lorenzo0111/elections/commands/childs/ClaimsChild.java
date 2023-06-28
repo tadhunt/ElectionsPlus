@@ -25,6 +25,7 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.elections.listeners.ClaimListener;
@@ -87,20 +88,22 @@ public class ClaimsChild extends SubCommand {
             }
 
             String name = a.get(0);
-            Claim claim = gp.dataStore.getClaimAt(player.getLocation(), false, null);
+            Claim gclaim = gp.dataStore.getClaimAt(player.getLocation(), false, null);
             if (claim == null) {
                 Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "create-no-claim-here");
                 return;
             }
 
-            plugin.getManager().createClaim(name, claim, claim.getOwnerID())
-                .thenAccept((eclaim) -> {
-                    if (eclaim == null) {
-                        Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "create-fail");
-                    } else {
-                        Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "created");
-                    }
-                });
+            Cache<UUID, EClaim> claims = plugin.getCache().getClaims();
+            if (claims.findByName(name) != null) {
+                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "claims", "already-exists");
+                return;
+            }
+
+            EClaim eclaim = new EClaim(UUID.randomUUID(), name, gclaim, player.getUniqueId(), true);
+            claims.add(eclaim.getId(), eclaim);
+            claims.persist();
+            Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "created");
 
             return;
         }
@@ -111,49 +114,41 @@ public class ClaimsChild extends SubCommand {
                 Messages.send(sender.audience(), true, "errors", "bad-args");
                 return;
             }
-
             String name = a.get(0);
-            plugin.getManager().getClaimByName(name)
-                .thenAccept((claim) -> {
-                    if (claim == null) {
-                        Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "not-found");
-                        return;
-                    }
 
-                    plugin.getManager().deleteClaim(claim)
-                        .thenAccept((success) -> {
-                            if (success) {
-                                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "deleted");
-                            } else {
-                                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "delete-fail");
-                            }
-                        });
-                });
+            Cache<UUID, EClaim> claims = plugin.getCache().getClaims();
+            EClaim eclaim = claims.findByName(name);
+            if (eclaim == null) {
+                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "not-found");
+                return;
+            }
+            claims.remove(eclaim.getId());
+            claims.persist();
+            Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "deleted");
+
+            return;
         }
 
         if (args[1].equalsIgnoreCase("list")) {
-            plugin.getManager().getClaims()
-                .thenAccept((claims) -> {
-                    Map <String, String> placeholders = new HashMap<String, String>();
-                    for (EClaim claim : claims.values()) {
-                        placeholders.put("name", claim.getName());
-                        placeholders.put("id", claim.getId().toString());
+            Map <String, String> placeholders = new HashMap<String, String>();
+            for (EClaim claim : plugin.getCache().getClaims().map().values()) {
+                placeholders.put("name", claim.getName());
+                placeholders.put("id", claim.getId().toString());
 
-                        UUID owner = claim.getOwner();
-                        if (owner == null) {
-                            placeholders.put("owner", "Admin");
-                        } else {
-                            OfflinePlayer p = Bukkit.getOfflinePlayer(owner);
-                            if (p == null) {
-                                placeholders.put("owner", owner.toString());
-                            } else {
-                                placeholders.put("owner", p.getName());
-                            }
-                        }
-
-                        Messages.send(sender.audience(), true, placeholders, "claims", "list");
+                UUID owner = claim.getOwner();
+                if (owner == null) {
+                    placeholders.put("owner", "Admin");
+                } else {
+                    OfflinePlayer p = Bukkit.getOfflinePlayer(owner);
+                    if (p == null) {
+                        placeholders.put("owner", owner.toString());
+                    } else {
+                        placeholders.put("owner", p.getName());
                     }
-                });
+                }
+
+                Messages.send(sender.audience(), true, placeholders, "claims", "list");
+            }
 
             return;
         }

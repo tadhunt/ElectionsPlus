@@ -25,8 +25,11 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.pluginslib.audience.User;
 import me.lorenzo0111.pluginslib.command.ICommand;
@@ -61,20 +64,16 @@ public class CloseChild extends SubCommand {
             return;
         }
 
-        String electionName = a.get(0);
+        String name = a.get(0);
 
-        plugin.getApi()
-                .getElection(electionName)
-                .thenAccept((election) -> {
-                    if (election != null) {
-                        election.close();
-
-                        Messages.send(user.audience(), true, Messages.single("name", election.getName()), "close", "closed");
-                        plugin.holoRefresh();
-                        return;
-                    }
-
-                    Messages.send(user.audience(), true, Messages.single("name", electionName), "errors", "election-not-found");
-                });
+        Cache<UUID, Election> cache = plugin.getCache().getElections();
+        Election election = cache.findByName(name);
+        if (election == null) {
+            Messages.send(user.audience(), true, Messages.single("name", electionName), "errors", "election-not-found");
+            return;
+        }
+        election.close();
+        cache.persist();
+        Messages.send(user.audience(), true, Messages.single("name", election.getName()), "close", "closed");
     }
 }

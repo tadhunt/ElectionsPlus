@@ -25,45 +25,87 @@
 package me.lorenzo0111.elections.cache;
 
 import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.ICacheEntry;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MapCache<K, V> implements Cache<K, V> {
-    private final Map<K, V> map = new ConcurrentHashMap<>();
+public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
+    private final Map<K, V> cache = new ConcurrentHashMap<>();
+    private final Map<K, V> delete = new ConcurrentHashMap<>();
 
     @Override
     public int size() {
-        return map.size();
+        return cache.size();
     }
 
     @Override
     public void reset() {
-        map.clear();
+        for (K key : cache.keySet()) {
+            V value = cache.remove(key);
+            delete.put(key, value);
+        }
     }
 
     @Override
     public void add(K key, V value) {
-        map.put(key, value);
+        cache.put(key, value);
     }
 
     @Override
     public boolean remove(K key, V value) {
-        return map.remove(key, value);
+        boolean removed = cache.remove(key, value);
+        if (removed) {
+            delete.put(key, value);
+        }
+
+        return removed;
     }
 
     @Override
     public V remove(K key) {
-        return map.remove(key);
+        V value;
+
+        value = cache.remove(key);
+        if (value != null) {
+            delete.put(key, value);
+        }
+
+        return value;
     }
 
     @Override
     public V get(K key) {
-        return map.get(key);
+        return cache.get(key);
     }
 
     @Override
     public Map<K, V> map() {
-        return map;
+        return cache;
+    }
+
+    @Override
+    public void persist() {
+        for (V value : delete.values()) {
+            value.delete();
+        }
+
+        for (V value : cache.values()) {
+            if (value.dirty()) {
+                value.update();
+            }
+        }
+    }
+
+    @Override
+    public V findByName(String name) {
+        for(V value : cache.values()) {
+            String vname = value.getName();
+            if (vname != null && vname.equals(name)) {
+                return value;
+            }
+        }
+
+        return null;
     }
 }

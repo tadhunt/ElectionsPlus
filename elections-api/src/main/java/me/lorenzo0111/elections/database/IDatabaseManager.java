@@ -42,36 +42,28 @@ import me.ryanhamshire.GriefPrevention.Claim;
 public interface IDatabaseManager {
     void closeConnection() throws SQLException;
 
-    CompletableFuture<Election> createElection(String name, Map<String, Party> parties);
-    CompletableFuture<List<Election>> getElections();
+    //CompletableFuture<Election> createElection(String name, Map<String, Party> parties);
+    CompletableFuture<Map<String, Election>> getElections();
     CompletableFuture<Boolean> updateElection(Election election);
     CompletableFuture<Boolean> deleteElection(Election election);
 
     CompletableFuture<Map<String, Party>> getParties();
-    CompletableFuture<Party> getParty(String name);
-    CompletableFuture<Party> createParty(String name, UUID owner);
-    CompletableFuture<Boolean> deleteParty(String name);
-    CompletableFuture<Boolean> deleteParty(Party party);
     CompletableFuture<Boolean> updateParty(Party party);
+    CompletableFuture<Boolean> deleteParty(Party party);
 
     CompletableFuture<List<Vote>> getVotes();
-    CompletableFuture<Boolean> vote(UUID player, Party party, Election election);
-    CompletableFuture<Boolean> vote(Vote vote);
+    CompletableFuture<?> updateVote(Vote vote);
     CompletableFuture<?> deleteVote(Vote vote);
 
-    CompletableFuture<List<ElectionBlock>> getElectionBlocks();
-    CompletableFuture<ElectionBlock> createElectionBlock(UUID world, Map <String, Object> location, String blockData);
-    CompletableFuture<Boolean> deleteElectionBlock(ElectionBlock electionBlock);
+    CompletableFuture<List<ElectionBlock>> getBlocks();
+    CompletableFuture<Boolean> updateBlock(ElectionBlock electionBlock);
+    CompletableFuture<Boolean> deleteBlock(ElectionBlock electionBlock);
 
     CompletableFuture<Map<String, DBHologram>> getHolograms();
-    CompletableFuture<DBHologram> createHologram(String name, String location, List<String> contents);
-    CompletableFuture<Boolean> deleteHologram(String name);
     CompletableFuture<Boolean> updateHologram(DBHologram hologram);
+    CompletableFuture<Boolean> deleteHologram(DBHologram hologram);
 
     CompletableFuture<Map<String, EClaim>> getClaims();
-    CompletableFuture<EClaim> getClaimById(Long id);
-    CompletableFuture<EClaim> getClaimByName(String name);
-    CompletableFuture<EClaim> createClaim(String name, Claim gclaim, UUID owner);
-    CompletableFuture<Boolean> deleteClaim(EClaim claim);
     CompletableFuture<Boolean> updateClaim(EClaim claim);
+    CompletableFuture<Boolean> deleteClaim(EClaim claim);
 }

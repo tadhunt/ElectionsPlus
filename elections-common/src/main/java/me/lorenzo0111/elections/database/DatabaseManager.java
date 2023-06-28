@@ -1,7 +1,7 @@
 /*
  * This file is part of ElectionsPlus, licensed under the MIT License.
  *
- * Copyright (c) Lorenzo0111
+ * Copyright (c) Lorenzo0111, tadhunt
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -129,16 +129,18 @@ public class DatabaseManager implements IDatabaseManager {
         votesColumns.add(new Column("electionId", "TEXT"));
         this.votesTable = new ETable(logger, scheduler, connectionHandler, "votes", votesColumns);
         this.votesTable.create();
+        this.votesTable.setUnique("idx_vote_id", "id");
 
         // Parties
         List<Column> partiesColumns = new ArrayList<>();
-        partiesColumns.add(new Column("owner", "TEXT"));
+        partiesColumns.add(new Column("id", "TEXT"));
         partiesColumns.add(new Column("name", "TEXT"));
-        partiesColumns.add(new Column("members", "TEXT"));
+        partiesColumns.add(new Column("owner", "TEXT"));
         partiesColumns.add(new Column("icon", "TEXT nullable"));
+        partiesColumns.add(new Column("members", "TEXT"));
         this.partiesTable = new ETable(logger, scheduler, connectionHandler, "parties", partiesColumns);
         this.partiesTable.create();
-        this.partiesTable.setUnique("idx_parties_name", "name");
+        this.partiesTable.setUnique("idx_party_id", "id");
 
         // Elections
         List<Column> electionsColumns = new ArrayList<>();
@@ -148,29 +150,36 @@ public class DatabaseManager implements IDatabaseManager {
         electionsColumns.add(new Column("open", "INTEGER"));
         this.electionsTable = new ETable(logger, scheduler, connectionHandler, "elections", electionsColumns);
         this.electionsTable.create();
+        this.electionsTable.setUnique("idx_election_id", "id");
 
         // Blocks
         List<Column> blocksColumns = new ArrayList<>();
+        blocksColumns.add(new Column("id", "TEXT"));
         blocksColumns.add(new Column("world", "TEXT"));
         blocksColumns.add(new Column("location", "TEXT"));
         blocksColumns.add(new Column("blockdata", "TEXT"));
         this.blocksTable = new ETable(logger, scheduler, connectionHandler, "blocks", blocksColumns);
         this.blocksTable.create();
+        this.blocksTable.setUnique("idx_block_id", "id");
 
         // Holograms
         List<Column> hologramsColumns = new ArrayList<>();
+        hologramsColumns.add(new Column("id", "TEXT"));
         hologramsColumns.add(new Column("name", "TEXT"));
         hologramsColumns.add(new Column("json", "TEXT"));
         this.hologramsTable = new ETable(logger, scheduler, connectionHandler, "holograms", hologramsColumns);
         this.hologramsTable.create();
+        this.hologramsTable.setUnique("idx_hologram_id", "id");
 
         // Claims
         List<Column> claimsColumns = new ArrayList<>();
-        claimsColumns.add(new Column("name", "TEXT"));
         claimsColumns.add(new Column("id", "TEXT"));
+        claimsColumns.add(new Column("name", "TEXT"));
+        claimsColumns.add(new Column("gpid", "TEXT"));
         claimsColumns.add(new Column("owner", "TEXT"));
         this.claimsTable = new ETable(logger, scheduler, connectionHandler, "claims", claimsColumns);
         this.claimsTable.create();
+        this.claimsTable.setUnique("idx_claim_id", "id");
 
         scheduler.repeating(new CacheTask(this, cache), 0L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
     }
@@ -200,289 +209,8 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public CompletableFuture<Election> createElection(String name, Map<String, Party> parties) {
-        CompletableFuture<Election> future = new CompletableFuture<>();
-
-        this.getElectionsTable()
-            .find("name", name)
-            .thenAccept((result) -> {
-                try {
-                    if (result.next()) {
-                        future.complete(null);
-                        return;
-                    }
-
-                    Election election = new Election(UUID.randomUUID(), name, parties, true);
-                    cache.getElections().add(election.getId(), election);
-                    this.getElectionsTable().add(election);
-                    future.complete(election);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            });
-
-        return future;
-    }
-
-    @Override
     public void closeConnection() throws SQLException {
         connectionHandler.close();
-    }
-
-    @Override
-    public CompletableFuture<List<Election>> getElections() {
-        CompletableFuture<List<Election>> future = new CompletableFuture<>();
-
-        getParties().
-            thenAccept((parties) -> {
-                getElectionsTable().run(() -> {
-                    try {
-                        Statement statement = connectionHandler.getConnection().createStatement();
-                        ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s;", getElectionsTable().getName()));
-
-                        List<Election> elections = new ArrayList<>();
-                        Gson gson = new Gson();
-                        while (resultSet.next()) {
-                            UUID id = UUID.fromString(resultSet.getString("id"));
-                            String name = resultSet.getString("name");
-                            Boolean open = resultSet.getInt("open") != 0;
-
-                            Type type = new TypeToken<ArrayList<String>>() {}.getType();
-                            List<String> partyNames = new ArrayList<>(gson.fromJson(resultSet.getString("parties"), type));
-                            Map<String, Party> electionParties = new HashMap<String, Party>();
-                            for (String partyName : partyNames) {
-                                Party party = parties.get(partyName);
-                                if (party != null) {
-                                    electionParties.put(partyName, party);
-                                }
-                            }
-                            Election election = new Election(id, name, electionParties, open);
-
-                            elections.add(election);
-                        }
-
-                        future.complete(elections);
-                    } catch (SQLException e) {
-                        logger.severe("SQL EXCEPTION: " + e.toString());
-                        e.printStackTrace();
-                        future.complete(null);
-                    } catch (Exception e) {
-                        logger.severe("EXCEPTION: " + e.toString());
-                        future.complete(null);
-                    }
-                });
-        });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Map<String, Party>> getParties() {
-        CompletableFuture<Map<String, Party>> future = new CompletableFuture<>();
-
-        getPartiesTable().run(() -> {
-            try {
-                Statement statement = connectionHandler.getConnection().createStatement();
-                ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s;", getPartiesTable().getName()));
-
-                Map<String, Party> parties = new HashMap<String, Party>();
-                while (resultSet.next()) {
-                    Party party = decodeParty(resultSet);
-                    parties.put(party.getName(), party);
-                }
-
-                future.complete(parties);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                future.complete(null);
-            }
-        });
-
-        return future;
-    }
-                    
-    private Party decodeParty(ResultSet resultSet) throws SQLException {
-        Type type = new TypeToken<ArrayList<UUID>>() {}.getType();
-        Gson gson = new Gson();
-        List<UUID> members = new ArrayList<>(gson.fromJson(resultSet.getString("members"), type));
-        Party party = new Party(resultSet.getString("name"), UUID.fromString(resultSet.getString("owner")), members);
-
-        if (resultSet.getString("icon") != null) {
-            party.setIcon(resultSet.getString("icon"));
-        }
-
-        return party;
-    }
-
-    @Override
-    public CompletableFuture<Party> getParty(String partyName) {
-        CompletableFuture<Party> future = new CompletableFuture<>();
-
-        getPartiesTable().run(() -> {
-            try {
-                Statement statement = connectionHandler.getConnection().createStatement();
-                ResultSet resultSet = statement.executeQuery(String.format("SELECT * FROM %s WHERE name = '%s';", getPartiesTable().getName(), partyName));
-
-                Integer nParties = 0;
-                Party party = null;
-                while (resultSet.next()) {
-                    nParties++;
-                    party = decodeParty(resultSet);
-                }
-
-                if (nParties > 1) {
-                    logger.severe(String.format("getParty: found %d parties with name '%s', expected 0..1", partyName, nParties));
-                    future.complete(null);
-                }
-
-                future.complete(party);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                future.complete(null);
-            }
-        });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Party> createParty(String name, UUID owner) {
-        CompletableFuture<Party> partyFuture = new CompletableFuture<>();
-
-        partiesTable.find("name", name)
-                .thenAccept((it) -> {
-                    try {
-                        if (it.next()) {
-                            partyFuture.complete(null);
-                            return;
-                        }
-
-                        Party party = new Party(name, owner);
-                        partiesTable.add(party);
-                        cache.getParties().add(party.getName(), party);
-                        partyFuture.complete(party);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                });
-
-        return partyFuture;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> deleteParty(String name) {
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-
-        cache.getParties().remove(name);
-        partiesTable.removeWhere("name", name)
-            .thenAccept((result) -> {
-                if (result instanceof String) {
-                    logger.severe(String.format("deleteParty[%s]: %s", name, (String)result));
-                    future.complete(false);
-                    return;
-                }
-
-                // remove this party from all elections
-                getElections()
-                    .thenAccept((elections) -> {
-                        for (Election election : elections) {
-                            election.deleteParty(name);
-                        }
-                        future.complete(true);
-                    });
-            });
-
-            return future;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> deleteParty(Party party) {
-        return deleteParty(party.getName());
-    }
-
-    @Override
-    public CompletableFuture<Boolean> updateParty(Party party) {
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-
-        cache.getParties().remove(party.getName());
-        cache.getParties().add(party.getName(), party);
-        partiesTable.removeWhere("name", party)
-            .thenRun(() -> {
-                partiesTable.add(party);
-                future.complete(true);
-            });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> updateElection(Election election) {
-        Cache<UUID, Election> ec = cache.getElections();
-        
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-        ec.remove(election.getId());
-        ec.add(election.getId(), election);
-        electionsTable.removeWhere("id", election.getId())
-            .thenRun(() -> {
-                electionsTable.add(election);
-                future.complete(true);
-            });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> deleteElection(Election election) {
-        // remove the election from the cache
-        cache.getElections().remove(election.getId());
-
-        // remove all votes for this election from the cache
-        List<Vote> votes = new ArrayList<Vote>();
-        Cache<String, Vote> voteCache = cache.getVotes();
-        for (Vote vote : voteCache.map().values()) {
-            if (vote.getElectionId().equals(election.getId())) {
-                votes.add(vote);
-            }
-        }
-        for (Vote vote : votes) {
-                voteCache.remove(vote.getCacheKey());
-        }
-
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-
-        // remove the election from the database
-        electionsTable
-            .removeWhere("id", election.getId())
-            .thenAccept((electionRemoveResult) -> {
-                if (electionRemoveResult instanceof String) {
-                    logger.severe(String.format("deleteElection[%s]: remove election: " + election.getName(), (String)electionRemoveResult));
-                    future.complete(false);
-                    return;
-                }
-    
-                // remove all votes for this election from the database
-                for (Vote vote : votes) {
-                    this.deleteVote(vote)
-                    .thenAccept((voteRemoveResult) -> {
-                        if (voteRemoveResult instanceof String) {
-                            logger.severe(String.format("deleteElection[%s]: remove vote: " + election.getName(), (String)voteRemoveResult));
-                            future.complete(false);
-                            return;
-                        }
-                        future.complete(true);
-                    });
-                }
-        });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<?> deleteVote(Vote vote) {
-        cache.getVotes().remove(vote.getCacheKey());
-
-        UUID voteId = vote.getVoteId();
-        return votesTable.removeWhere("id", voteId);
     }
 
     @Override
@@ -492,15 +220,10 @@ public class DatabaseManager implements IDatabaseManager {
         this.getVotesTable().run(() -> {
                 try {
                     PreparedStatement statement = votesTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", votesTable.getName()));
-                    ResultSet set = statement.executeQuery();
+                    ResultSet resultSet = statement.executeQuery();
                     List<Vote> votes = new ArrayList<>();
-                    while (set.next()) {
-                        UUID voteId = UUID.fromString(set.getString("id"));
-                        UUID player = UUID.fromString(set.getString("player"));
-                        String party = set.getString("party");
-                        UUID electionId = UUID.fromString(set.getString("electionId"));
-
-                        Vote vote = new Vote(voteId, player, party, electionId);
+                    while (resultSet.next()) {
+                        Vote vote = Vote.fromResultSet(resultSet);
                         votes.add(vote);
                     }
                     future.complete(votes);
@@ -514,40 +237,109 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public CompletableFuture<Boolean> vote(UUID player, Party party, Election election) {
-        Vote vote = new Vote(UUID.randomUUID(), player, party.getName(), election.getId());
-        return this.vote(vote);
+    public CompletableFuture<Boolean> updateVote(Vote vote) {
+        return votesTable.addOrReplace(vote);
     }
 
     @Override
-    public CompletableFuture<Boolean> vote(Vote vote) {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
+    public CompletableFuture<Boolean> deleteVote(Vote vote) {
+        return votesTable.removeWhere("id", vote.getId());
+    }
 
-        getVotesTable().run(() -> {
+    @Override
+    public CompletableFuture<Map<String, Party>> getParties() {
+        CompletableFuture<Map<String, Party>> future = new CompletableFuture<>();
+
+        this.getPartiesTable().run(() -> {
                 try {
-                    Statement statement = connectionHandler.getConnection().createStatement();
-                    String query = String.format("SELECT * FROM %s WHERE player = '%s' AND electionId = '%s';",
-                        getVotesTable().getName(), vote.getPlayer().toString(), vote.getElectionId().toString());
-                    ResultSet resultSet = statement.executeQuery(query);
-
-                    if (resultSet.next()) {
-                        future.complete(false);
-                        return;
+                    PreparedStatement statement = votesTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", votesTable.getName()));
+                    ResultSet resultSet = statement.executeQuery();
+                    Map<String, Party> parties = new HashMap<>();
+                    while (resultSet.next()) {
+                        Party party = Party.fromResultSet(resultSet);
+                        parties.put(party.getName(), party);
                     }
-
-                    this.getVotesTable().add(vote);
-                    cache.getVotes().add(vote.getCacheKey(), vote);
-                    future.complete(true);
+                    future.complete(parties);
                 } catch (SQLException e) {
                     e.printStackTrace();
-                    future.complete(false);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    future.complete(false);
+                    future.complete(null);
                 }
-            });
+        });
 
         return future;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> updateParty(Party party) {
+        return partiesTable.addOrReplace(party);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteParty(Party party) {
+        return partiesTable.removeWhere("id", party.getId());
+    }
+
+    @Override
+    public CompletableFuture<Map<String, Election>> getElections() {
+        CompletableFuture<Map<String, Election>> future = new CompletableFuture<>();
+
+        this.getElectionsTable().run(() -> {
+                try {
+                    PreparedStatement statement = votesTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", votesTable.getName()));
+                    ResultSet resultSet = statement.executeQuery();
+                    Map<String, Election> elections = new HashMap<>();
+                    while (resultSet.next()) {
+                        Election election = Election.fromResultSet(resultSet);
+                        elections.put(election.getName(), election);
+                    }
+                    future.complete(elections);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    future.complete(null);
+                }
+        });
+
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> updateElection(Election election) {
+        return electionsTable.addOrReplace(election);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteElection(Election election) {
+        return electionsTable.removeWhere("id", election.getId());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> updateBlock(ElectionBlock block) {
+        return blocksTable.addOrReplace(block);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteBlock(ElectionBlock block) {
+        return blocksTable.removeWhere("id", block.getId());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> updateHologram(DBHologram dbholo) {
+        return hologramsTable.addOrReplace(dbholo);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteHologram(DBHologram dbholo) {
+        return partiesTable.removeWhere("id", dbholo.getId());
+    }
+
+    @Override
+    public CompletableFuture<Boolean> updateClaim(EClaim eclaim) {
+        return claimsTable.addOrReplace(eclaim);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> deleteClaim(EClaim claim) {
+        return claimsTable.removeWhere("id", eclaim.getId());
     }
 
     @Override
@@ -674,62 +466,6 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteHologram(String name) {
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-
-        hologramsTable
-            .removeWhere("name", name)
-            .thenAccept((o) -> {
-                future.complete(true);
-            });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> updateHologram(DBHologram hologram) {
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-
-        hologramsTable
-            .removeWhere("name", hologram.getName())
-            .thenRun(() -> {
-                hologramsTable.add(hologram);
-                future.complete(true);
-            });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<EClaim> createClaim(String name, Claim gclaim, UUID owner) {
-        CompletableFuture<EClaim> future = new CompletableFuture<>();
-
-        getClaimsTable().run(() -> {
-            try {
-                Statement statement = connectionHandler.getConnection().createStatement();
-                String query = String.format("SELECT * FROM %s WHERE name = '%s' OR id = '%s';", getClaimsTable().getName(), name, gclaim.getID().toString());
-                ResultSet resultSet = statement.executeQuery(query);
-
-                if (resultSet.next()) {
-                        future.complete(null);
-                        return;
-                }
-
-                EClaim eclaim = new EClaim(name, gclaim, owner);
-                claimsTable.add(eclaim);
-                future.complete(eclaim);
-            } catch (SQLException e) {
-                future.complete(null);
-                e.printStackTrace();
-                return;
-            }
-
-        });
-
-        return future;
-    }
-
-    @Override
     public CompletableFuture<Map<String, EClaim>> getClaims() {
         CompletableFuture<Map<String, EClaim>> future = new CompletableFuture<>();
 
@@ -795,39 +531,5 @@ public class DatabaseManager implements IDatabaseManager {
 
         return future;
 
-    }
-
-    @Override
-    public CompletableFuture<Boolean> deleteClaim(EClaim claim) {
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-        claimsTable.removeWhere("id", claim.getId().toString())
-            .thenAccept((result) -> {
-                if (result instanceof Integer) {
-                    future.complete(true);
-                    return;
-                }
-                if (result instanceof String) {
-                    this.logger.severe("deleteClaim: " + (String)result);
-                } else {
-                    this.logger.severe("deleteClaim: " + result.toString());
-                }
-                future.complete(false);
-            });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> updateClaim(EClaim claim) {
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-
-        claimsTable
-            .removeWhere("id", claim.getId().toString())
-            .thenRun(() -> {
-                claimsTable.add(claim);
-                future.complete(true);
-            });
-
-        return future;
     }
 }

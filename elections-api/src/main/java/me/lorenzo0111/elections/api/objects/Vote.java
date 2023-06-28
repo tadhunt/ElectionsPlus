@@ -1,7 +1,7 @@
 /*
  * This file is part of ElectionsPlus, licensed under the MIT License.
  *
- * Copyright (c) Lorenzo0111
+ * Copyright (c) Lorenzo0111, tadhunt
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,33 +24,38 @@
 
 package me.lorenzo0111.elections.api.objects;
 
+import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
 import org.jetbrains.annotations.NotNull;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-public class Vote implements DatabaseSerializable {
-    private final UUID voteId;
+public class Vote implements DatabaseSerializable, ICacheEntry {
+    private final UUID id;
     private final UUID player;
     private final String party;
     private final UUID electionId;
+    private boolean dirty;
 
-    public Vote(UUID voteId, UUID player, String party, UUID electionId) {
-        this.voteId = voteId;
+    public Vote(UUID id, UUID player, String party, UUID electionId, boolean dirty) {
+        this.dirty = dirty;
+        this.id = id;
         this.player = player;
         this.party = party;
         this.electionId = electionId;
     }
 
-    public String getCacheKey() {
-        return electionId.toString() + "||" + player.toString();
+    public UUID getId() {
+        return id;
     }
 
-    public UUID getVoteId() {
-        return voteId;
+    public String getName() {
+        return null;
     }
 
     public String getParty() {
@@ -67,12 +72,26 @@ public class Vote implements DatabaseSerializable {
 
     @Override
     public DatabaseSerializable from(Map<String, Object> keys) {
-        UUID voteId = UUID.fromString((String) keys.get("id"));
+        UUID id = UUID.fromString((String) keys.get("id"));
         UUID player = UUID.fromString((String) keys.get("player"));
         String party = (String) keys.get("party");
         UUID electionId = UUID.fromString((String) keys.get("electionId"));
 
-        return new Vote(voteId, player, party, electionId);
+        return new Vote(id, player, party, electionId, false);
+    }
+
+    public static Vote fromResultSet(ResultSet results) {
+        try {
+            UUID voteId = UUID.fromString(results.getString("id"));
+            UUID player = UUID.fromString(results.getString("player"));
+            String partyName = results.getString("party");
+            UUID electionId = UUID.fromString(results.getString("electionId"));
+
+            return new Vote(voteId, player, partyName, electionId, false);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     @Override
@@ -84,7 +103,7 @@ public class Vote implements DatabaseSerializable {
     public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
 
-        map.put("id", voteId);
+        map.put("id", id);
         map.put("player", player);
         map.put("party", party);
         map.put("electionId", electionId);
@@ -103,11 +122,26 @@ public class Vote implements DatabaseSerializable {
         }
 
         Vote vote = (Vote) o;
-        return Objects.equals(voteId, vote.voteId) && Objects.equals(player, vote.player) && Objects.equals(party, vote.party) && Objects.equals(electionId, vote.electionId);
+        return Objects.equals(id, vote.id) && Objects.equals(player, vote.player) && Objects.equals(party, vote.party) && Objects.equals(electionId, vote.electionId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(voteId, player, party, electionId);
+        return Objects.hash(id, player, party, electionId);
+    }
+
+    public boolean dirty() {
+        return dirty;
+    }
+
+    public void delete() {
+        Getters.database().deleteVote(this);
+    }
+
+    public void update() throws RuntimeException {
+        if (!dirty) {
+            return;
+        }
+        throw new RuntimeException("votes cannot be changed");
     }
 }
