@@ -370,44 +370,69 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public void deleteParty(String name) {
+    public CompletableFuture<Boolean> deleteParty(String name) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
         cache.getParties().remove(name);
-        partiesTable.removeWhere("name", name);
-
-        // remove the party from all elections it's part of
-        getElections()
-            .thenAccept((elections) -> {
-                for (Election election : elections) {
-                    election.deleteParty(name);
+        partiesTable.removeWhere("name", name)
+            .thenAccept((result) -> {
+                if (result instanceof String) {
+                    logger.severe(String.format("deleteParty[%s]: %s", name, (String)result));
+                    future.complete(false);
+                    return;
                 }
-        });
+
+                // remove this party from all elections
+                getElections()
+                    .thenAccept((elections) -> {
+                        for (Election election : elections) {
+                            election.deleteParty(name);
+                        }
+                        future.complete(true);
+                    });
+            });
+
+            return future;
     }
 
     @Override
-    public void deleteParty(Party party) {
-        deleteParty(party.getName());
+    public CompletableFuture<Boolean> deleteParty(Party party) {
+        return deleteParty(party.getName());
     }
 
     @Override
-    public void updateParty(Party party) {
+    public CompletableFuture<Boolean> updateParty(Party party) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
         cache.getParties().remove(party.getName());
         cache.getParties().add(party.getName(), party);
         partiesTable.removeWhere("name", party)
-                .thenRun(() -> partiesTable.add(party));
+            .thenRun(() -> {
+                partiesTable.add(party);
+                future.complete(true);
+            });
+
+        return future;
     }
 
     @Override
-    public void updateElection(Election election) {
+    public CompletableFuture<Boolean> updateElection(Election election) {
         Cache<UUID, Election> ec = cache.getElections();
         
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
         ec.remove(election.getId());
         ec.add(election.getId(), election);
-        electionsTable.removeWhere("name", election)
-                .thenRun(() -> electionsTable.add(election));
+        electionsTable.removeWhere("id", election.getId())
+            .thenRun(() -> {
+                electionsTable.add(election);
+                future.complete(true);
+            });
+
+        return future;
     }
 
     @Override
-    public void deleteElection(Election election) {
+    public CompletableFuture<Boolean> deleteElection(Election election) {
         // remove the election from the cache
         cache.getElections().remove(election.getId());
 
@@ -423,21 +448,33 @@ public class DatabaseManager implements IDatabaseManager {
                 voteCache.remove(vote.getCacheKey());
         }
 
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
         // remove the election from the database
-        electionsTable.removeWhere("id", election.getId()).thenAccept((electionRemoveResult) -> {
-            if (electionRemoveResult instanceof String) {
-                logger.severe(String.format("deleteElection[%s]: remove election: " + election.getName(), (String)electionRemoveResult));
-            }
+        electionsTable
+            .removeWhere("id", election.getId())
+            .thenAccept((electionRemoveResult) -> {
+                if (electionRemoveResult instanceof String) {
+                    logger.severe(String.format("deleteElection[%s]: remove election: " + election.getName(), (String)electionRemoveResult));
+                    future.complete(false);
+                    return;
+                }
+    
+                // remove all votes for this election from the database
+                for (Vote vote : votes) {
+                    this.deleteVote(vote)
+                    .thenAccept((voteRemoveResult) -> {
+                        if (voteRemoveResult instanceof String) {
+                            logger.severe(String.format("deleteElection[%s]: remove vote: " + election.getName(), (String)voteRemoveResult));
+                            future.complete(false);
+                            return;
+                        }
+                        future.complete(true);
+                    });
+                }
         });
 
-        // remove all votes for this election from the database
-        for (Vote vote : votes) {
-            this.deleteVote(vote).thenAccept((voteRemoveResult) -> {
-                if (voteRemoveResult instanceof String) {
-                    logger.severe(String.format("deleteElection[%s]: remove vote: " + election.getName(), (String)voteRemoveResult));
-                }
-            });
-        }
+        return future;
     }
 
     @Override
@@ -573,9 +610,16 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public void deleteElectionBlock(ElectionBlock electionBlock) {
+    public CompletableFuture<Boolean> deleteElectionBlock(ElectionBlock electionBlock) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
         // TODO(tadhunt): correctly handle different worlds
-        blocksTable.removeWhere("location", electionBlock.getLocation());
+        blocksTable
+            .removeWhere("location", electionBlock.getLocation())
+            .thenAccept((o) -> {
+                future.complete(true);
+            });
+
+        return future;
     }
 
     @Override
@@ -630,15 +674,30 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public void deleteHologram(String name) {
-        hologramsTable.removeWhere("name", name);
+    public CompletableFuture<Boolean> deleteHologram(String name) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
+        hologramsTable
+            .removeWhere("name", name)
+            .thenAccept((o) -> {
+                future.complete(true);
+            });
+
+        return future;
     }
 
     @Override
-    public void updateHologram(DBHologram hologram) {
+    public CompletableFuture<Boolean> updateHologram(DBHologram hologram) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
         hologramsTable
             .removeWhere("name", hologram.getName())
-            .thenRun(() -> hologramsTable.add(hologram));
+            .thenRun(() -> {
+                hologramsTable.add(hologram);
+                future.complete(true);
+            });
+
+        return future;
     }
 
     @Override
@@ -759,9 +818,16 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public void updateClaim(EClaim claim) {
+    public CompletableFuture<Boolean> updateClaim(EClaim claim) {
+        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
         claimsTable
             .removeWhere("id", claim.getId().toString())
-            .thenRun(() -> claimsTable.add(claim));
+            .thenRun(() -> {
+                claimsTable.add(claim);
+                future.complete(true);
+            });
+
+        return future;
     }
 }

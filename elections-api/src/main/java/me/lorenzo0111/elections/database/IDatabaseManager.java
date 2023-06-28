@@ -44,15 +44,15 @@ public interface IDatabaseManager {
 
     CompletableFuture<Election> createElection(String name, Map<String, Party> parties);
     CompletableFuture<List<Election>> getElections();
-    void updateElection(Election election);
-    void deleteElection(Election election);
+    CompletableFuture<Boolean> updateElection(Election election);
+    CompletableFuture<Boolean> deleteElection(Election election);
 
     CompletableFuture<Map<String, Party>> getParties();
     CompletableFuture<Party> getParty(String name);
     CompletableFuture<Party> createParty(String name, UUID owner);
-    void deleteParty(String name);
-    void deleteParty(Party party);
-    void updateParty(Party party);
+    CompletableFuture<Boolean> deleteParty(String name);
+    CompletableFuture<Boolean> deleteParty(Party party);
+    CompletableFuture<Boolean> updateParty(Party party);
 
     CompletableFuture<List<Vote>> getVotes();
     CompletableFuture<Boolean> vote(UUID player, Party party, Election election);
@@ -61,17 +61,17 @@ public interface IDatabaseManager {
 
     CompletableFuture<List<ElectionBlock>> getElectionBlocks();
     CompletableFuture<ElectionBlock> createElectionBlock(UUID world, Map <String, Object> location, String blockData);
-    void deleteElectionBlock(ElectionBlock electionBlock);
+    CompletableFuture<Boolean> deleteElectionBlock(ElectionBlock electionBlock);
 
     CompletableFuture<Map<String, DBHologram>> getHolograms();
     CompletableFuture<DBHologram> createHologram(String name, String location, List<String> contents);
-    void deleteHologram(String name);
-    void updateHologram(DBHologram hologram);
+    CompletableFuture<Boolean> deleteHologram(String name);
+    CompletableFuture<Boolean> updateHologram(DBHologram hologram);
 
     CompletableFuture<Map<String, EClaim>> getClaims();
     CompletableFuture<EClaim> getClaimById(Long id);
     CompletableFuture<EClaim> getClaimByName(String name);
     CompletableFuture<EClaim> createClaim(String name, Claim gclaim, UUID owner);
     CompletableFuture<Boolean> deleteClaim(EClaim claim);
-    void updateClaim(EClaim claim);
+    CompletableFuture<Boolean> updateClaim(EClaim claim);
 }

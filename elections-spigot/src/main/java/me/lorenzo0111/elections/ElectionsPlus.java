@@ -155,14 +155,6 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                     Claim gclaim = gp.dataStore.getClaim(eclaim.getId());
 
                     if (gclaim == null) {
-                        manager.deleteClaim(eclaim)
-                            .thenAccept((success) -> {
-                                if (success) {
-                                    this.getLogger().info(String.format("claimsInit: GP claim %d deleted, deleted claim %s", eclaim.getId(), eclaim.getName()));
-                                } else {
-                                    this.getLogger().info(String.format("claimsInit: GP claim %d deleted, failed to delete claim %s", eclaim.getId(), eclaim.getName()));
-                                }
-                            });
                         eclaim.delete();
                         this.getManager().deleteParty(eclaim.getName());
                         continue;
