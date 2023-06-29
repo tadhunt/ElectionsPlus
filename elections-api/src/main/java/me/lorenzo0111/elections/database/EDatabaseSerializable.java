@@ -43,8 +43,8 @@ public interface EDatabaseSerializable {
      */
     @NotNull Map<String, Object> serialize();
 
-    boolean dirty();
-    void clean();
+    Version version();
+
     CompletableFuture<Boolean> delete();
     CompletableFuture<Boolean> update();
 }

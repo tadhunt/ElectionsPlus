@@ -41,20 +41,21 @@ import com.google.gson.Gson;
 
 import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.elections.database.EDatabaseSerializable;
+import me.lorenzo0111.elections.database.Version;
 
 public class DBHologram implements EDatabaseSerializable, ICacheEntry {
     private UUID id;
     private String name;
     private String location;
     private List<String> contents;
-    private boolean dirty;
+    private Version version;
 
     public DBHologram(UUID id, String name, String location, List<String> contents, boolean dirty) {
         this.id = id;
         this.name = name;
         this.location = location;
         this.contents = contents;
-        this.dirty = dirty;
+        this.version = new Version(dirty);
     }
 
     public UUID getId() {
@@ -75,33 +76,28 @@ public class DBHologram implements EDatabaseSerializable, ICacheEntry {
 
     public void setContents(List<String> contents) {
         this.contents = contents;
-        this.dirty = true;
+        this.version.dirty();
     }
 
     public void setContent(String line) {
         this.contents = new ArrayList<String>();
         this.contents.add(line);
-        this.dirty = true;
+        this.version.dirty();
     }
 
     public void addContent(String line) {
         this.contents.add(line);
-        this.dirty = true;
+        this.version.dirty();
     }
 
     public void clear() {
         this.contents.clear();
-        this.dirty = true;
+        this.version.dirty();
     }
 
     @Override
-    public boolean dirty() {
-        return dirty;
-    }
-
-    @Override
-    public void clean() {
-        dirty = false;
+    public Version version() {
+        return version;
     }
 
     @Override

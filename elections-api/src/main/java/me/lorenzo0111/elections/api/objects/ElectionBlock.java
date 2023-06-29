@@ -30,6 +30,7 @@ import com.google.gson.Gson;
 
 import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.elections.database.EDatabaseSerializable;
+import me.lorenzo0111.elections.database.Version;
 
 import com.google.common.reflect.TypeToken;
 
@@ -46,14 +47,14 @@ public class ElectionBlock implements EDatabaseSerializable, ICacheEntry {
     private final UUID world;
     private final Map<String, Object> location;
     private final String blockData;
-    private boolean dirty;
+    private Version version;
 
     public ElectionBlock(UUID id, UUID world, Map<String, Object> location, String blockData, boolean dirty) {
         this.id = id;
         this.world = world;
         this.location = location;
         this.blockData = blockData;
-        this.dirty = dirty;
+        this.version = new Version(dirty);
     }
 
     public UUID getId() {
@@ -141,11 +142,7 @@ public class ElectionBlock implements EDatabaseSerializable, ICacheEntry {
     }
 
     @Override
-    public void clean() {
-        dirty = false;
-    }
-
-    public boolean dirty() {
-        return dirty;
+    public Version version() {
+        return version;
     }
 }

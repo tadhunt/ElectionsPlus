@@ -26,6 +26,7 @@ package me.lorenzo0111.elections.api.objects;
 
 import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.elections.database.EDatabaseSerializable;
+import me.lorenzo0111.elections.database.Version;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -42,14 +43,14 @@ public class Vote implements EDatabaseSerializable, ICacheEntry {
     private final UUID player;
     private final UUID party;
     private final UUID electionId;
-    private boolean dirty;
+    private Version version;
 
     public Vote(UUID id, UUID player, UUID party, UUID electionId, boolean dirty) {
-        this.dirty = dirty;
         this.id = id;
         this.player = player;
         this.party = party;
         this.electionId = electionId;
+        this.version = new Version(dirty);
     }
 
     public UUID getId() {
@@ -118,13 +119,8 @@ public class Vote implements EDatabaseSerializable, ICacheEntry {
     }
 
     @Override
-    public boolean dirty() {
-        return dirty;
-    }
-
-    @Override
-    public void clean() {
-        dirty = false;
+    public Version version() {
+        return version;
     }
 
     @Override

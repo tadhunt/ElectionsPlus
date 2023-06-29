@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 
 import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.elections.database.EDatabaseSerializable;
+import me.lorenzo0111.elections.database.Version;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 
@@ -43,14 +44,14 @@ public class EClaim implements EDatabaseSerializable, ICacheEntry {
     private String name;
     private UUID owner;
     private Claim claim;
-    private boolean dirty;
+    private Version version;
 
     public EClaim(UUID id, String name, Claim claim, UUID owner, boolean dirty) {
         this.id = id;
         this.name = name;
         this.claim = claim;
         this.owner = owner;
-        this.dirty = dirty;
+        this.version = new Version(dirty);
     }
 
     public String getName() {
@@ -71,7 +72,7 @@ public class EClaim implements EDatabaseSerializable, ICacheEntry {
 
     public void setOwner(UUID owner) {
         this.owner = owner;
-        this.dirty = true;
+        this.version.update();
     }
 
     public static EClaim fromResultSet(ResultSet resultSet) throws SQLException {
@@ -114,18 +115,17 @@ public class EClaim implements EDatabaseSerializable, ICacheEntry {
         return map;
     }
 
-    public boolean dirty() {
-        return dirty;
+    @Override
+    public Version version() {
+        return version;
     }
 
-    public void clean() {
-        dirty = false;
-    }
-
+    @Override
     public CompletableFuture<Boolean> delete() {
         return Getters.database().deleteClaim(this);
     }
 
+    @Override
     public CompletableFuture<Boolean> update() {
         return Getters.database().updateClaim(this);
     }

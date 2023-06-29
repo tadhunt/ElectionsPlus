@@ -29,6 +29,7 @@ import com.google.gson.Gson;
 
 import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.elections.database.EDatabaseSerializable;
+import me.lorenzo0111.elections.database.Version;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -44,7 +45,7 @@ public class Party implements EDatabaseSerializable, ICacheEntry {
     private String icon;
     private UUID owner;
     private final List<UUID> members;
-    private boolean dirty;
+    private Version version;
 
     public Party(UUID id, String name, UUID owner, String icon, List<UUID> members, boolean dirty) {
         this.id = id;
@@ -52,7 +53,7 @@ public class Party implements EDatabaseSerializable, ICacheEntry {
         this.owner = owner;
         this.icon = icon;
         this.members = members;
-        this.dirty = dirty;
+        this.version = new Version(dirty);
     }
 
     public Party(UUID id, String name, UUID owner, boolean dirty) {
@@ -73,12 +74,12 @@ public class Party implements EDatabaseSerializable, ICacheEntry {
         }
 
         this.members.add(uuid);
-        dirty = true;
+        this.version.dirty();
     }
 
     public void removeMember(UUID uuid) {
         if (this.members.remove(uuid)) {
-            dirty = true;
+            this.version.dirty();
         }
     }
 
@@ -93,12 +94,12 @@ public class Party implements EDatabaseSerializable, ICacheEntry {
     public void setOwner(UUID owner) {
         this.owner = owner;
         this.members.remove(owner);
-        this.dirty = true;
+        this.version.dirty();
     }
 
     public void setIcon(String icon) {
         this.icon = icon;
-        this.dirty = true;
+        this.version.dirty();
     }
 
     public String getIcon() {
@@ -138,13 +139,8 @@ public class Party implements EDatabaseSerializable, ICacheEntry {
     }
 
     @Override
-    public boolean dirty() {
-        return dirty;
-    }
-
-    @Override
-    public void clean() {
-        dirty = false;
+    public Version version() {
+        return version;
     }
 
     public CompletableFuture<Boolean> delete() {

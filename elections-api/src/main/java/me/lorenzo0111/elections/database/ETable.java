@@ -115,7 +115,7 @@ public class ETable {
     public CompletableFuture<Boolean> addOrReplace(EDatabaseSerializable serializable) {
         CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
 
-        if (!serializable.dirty()) {
+        if (!serializable.version().isDirty()) {
             future.complete(true);
             return future;
         }

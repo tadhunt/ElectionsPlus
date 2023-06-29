@@ -26,6 +26,7 @@ package me.lorenzo0111.elections.cache;
 
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.ICacheEntry;
+import me.lorenzo0111.elections.database.Version;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -91,11 +92,15 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
         }
 
         for (V value : cache.values()) {
-            if (value.dirty()) {
+            Version version = value.version();
+            Integer currentVersion = version.getVersion();
+            Integer lastVersion = version.getLast();
+
+            if (currentVersion > lastVersion) {
                 value.update()
                     .thenAccept((success) -> {
                         if (success) {
-                            value.clean();
+                            value.version().setLast(currentVersion);
                         }
                     });
             }

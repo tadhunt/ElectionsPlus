@@ -29,6 +29,7 @@ import com.google.common.reflect.TypeToken;
 
 import me.lorenzo0111.elections.constants.Getters;
 import me.lorenzo0111.elections.database.EDatabaseSerializable;
+import me.lorenzo0111.elections.database.Version;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -47,7 +48,7 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
     private final String name;
     private final Map<UUID, Boolean> parties;
     private boolean open;
-    private boolean dirty;
+    private Version version;
 
     public Election(UUID id, String name, Set<UUID> parties, boolean open, boolean dirty) {
         Map<UUID, Boolean> pmap = new HashMap<>();
@@ -59,7 +60,7 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
         this.name = name;
         this.parties = pmap;
         this.open = open;
-        this.dirty = dirty;
+        this.version = new Version(dirty);
     }
 
     public UUID getId() {
@@ -83,7 +84,7 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
             return false;
         }
 
-        this.dirty = true;
+        this.version.update();
 
         return true;
     }
@@ -94,12 +95,12 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
         }
 
         parties.put(id, true);
-        this.dirty = true;
+        this.version.update();
     }
 
     public void close() {
         this.open = false;
-        this.dirty = true;
+        this.version.update();
     }
 
     public boolean isOpen() {
@@ -135,13 +136,8 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
     }
 
     @Override
-    public boolean dirty() {
-        return dirty;
-    }
-
-    @Override
-    public void clean() {
-        dirty = false;
+    public Version version() {
+        return version;
     }
 
     @Override
