@@ -72,7 +72,7 @@ public class EClaim implements EDatabaseSerializable, ICacheEntry {
 
     public void setOwner(UUID owner) {
         this.owner = owner;
-        this.version.update();
+        this.version.dirty();
     }
 
     public static EClaim fromResultSet(ResultSet resultSet) throws SQLException {

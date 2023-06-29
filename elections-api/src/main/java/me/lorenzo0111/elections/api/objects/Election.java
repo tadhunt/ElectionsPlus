@@ -84,7 +84,7 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
             return false;
         }
 
-        this.version.update();
+        this.version.dirty();
 
         return true;
     }
@@ -95,12 +95,12 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
         }
 
         parties.put(id, true);
-        this.version.update();
+        this.version.dirty();
     }
 
     public void close() {
         this.open = false;
-        this.version.update();
+        this.version.dirty();
     }
 
     public boolean isOpen() {
