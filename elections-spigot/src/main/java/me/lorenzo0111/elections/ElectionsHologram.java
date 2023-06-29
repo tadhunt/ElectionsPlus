@@ -38,6 +38,7 @@ import com.google.common.reflect.TypeToken;
 import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.filoghost.holographicdisplays.api.hologram.Hologram;
 import me.filoghost.holographicdisplays.api.hologram.HologramLines;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.handlers.Messages;
@@ -48,14 +49,18 @@ public class ElectionsHologram {
     private Hologram holo;
     private DBHologram dbholo;
 
-    ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, String name, Location location, List<String> contents, Boolean persist) {
+    ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, String name, Location location, List<String> contents, boolean dirty) {
         if (contents == null) {
             contents = new ArrayList<String>();
         }
 
+        Cache<UUID, DBHologram> dbholos = plugin.getCache().getHolograms();
+        DBHologram dbholo = new DBHologram(UUID.randomUUID(), name, new Gson().toJson(location.serialize()), contents, dirty);
+        dbholos.add(dbholo.getId(), dbholo);
+
         this.plugin = plugin;
         this.holoApi = api;
-        this.dbholo = new DBHologram(name, new Gson().toJson(location.serialize()), contents, persist);
+        this.dbholo = dbholo;
         this.holo = holoApi.createHologram(location);
 
         refresh();

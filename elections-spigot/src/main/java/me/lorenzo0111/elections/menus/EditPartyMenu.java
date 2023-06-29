@@ -31,6 +31,7 @@ import dev.triumphteam.gui.components.InteractionModifier;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.GuiItem;
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.conversation.ConversationUtil;
 import me.lorenzo0111.elections.conversation.conversations.IconConversation;
@@ -41,6 +42,7 @@ import org.bukkit.entity.Player;
 
 import java.util.EnumSet;
 import java.util.Objects;
+import java.util.UUID;
 
 public class EditPartyMenu extends BaseGui {
     private final Player owner;
@@ -64,10 +66,10 @@ public class EditPartyMenu extends BaseGui {
         this.setItem(4, 3, ItemBuilder.from(Material.BARRIER).name(Messages.component(false, "guis", "delete")).lore(Messages.component(false, "guis", "delete-party-lore")).asGuiItem(e -> {
             e.getWhoClicked().closeInventory();
             if (party.getOwner().equals(owner.getUniqueId())) {
-                plugin.getManager()
-                        .deleteParty(party);
-                Messages.send(e.getWhoClicked(), true, "parties", "deleted");
-                return;
+                if (plugin.deleteParty(party)) {
+                    Messages.send(e.getWhoClicked(), true, "parties", "deleted");
+                    return;
+                }
             }
 
             Messages.send(e.getWhoClicked(), true, "parties", "no-permission-delete");

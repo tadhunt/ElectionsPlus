@@ -24,39 +24,41 @@
 
 package me.lorenzo0111.elections.api.objects;
 
+import java.lang.reflect.Type;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import me.lorenzo0111.elections.constants.Getters;
-import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
+import me.lorenzo0111.elections.database.EDatabaseSerializable;
 
-public class DBHologram implements DatabaseSerializable {
+public class DBHologram implements EDatabaseSerializable, ICacheEntry {
+    private UUID id;
     private String name;
     private String location;
     private List<String> contents;
+    private boolean dirty;
 
-    public DBHologram(String name, String location, List<String> contents) {
-        init(name, location, contents, false);
-    }
-
-    public DBHologram(String name, String location, List<String> contents, Boolean persist) {
-        init(name, location, contents, persist);
-    }
-
-    private void init(String name, String location, List<String> contents, Boolean persist) {
+    public DBHologram(UUID id, String name, String location, List<String> contents, boolean dirty) {
+        this.id = id;
         this.name = name;
         this.location = location;
         this.contents = contents;
+        this.dirty = dirty;
+    }
 
-        if (persist) {
-            persist();
-        }
+    public UUID getId() {
+        return id;
     }
 
     public String getName() {
@@ -73,38 +75,53 @@ public class DBHologram implements DatabaseSerializable {
 
     public void setContents(List<String> contents) {
         this.contents = contents;
-        persist();
+        this.dirty = true;
     }
 
     public void setContent(String line) {
         this.contents = new ArrayList<String>();
         this.contents.add(line);
-        persist();
+        this.dirty = true;
     }
 
     public void addContent(String line) {
         this.contents.add(line);
-        persist();
+        this.dirty = true;
     }
 
     public void clear() {
         this.contents.clear();
-        persist();
-    }
-
-    public void delete() {
-        Getters.database().deleteHologram(this.getName());
-    }
-
-    private void persist() {
-        Getters.database().updateHologram(this);
+        this.dirty = true;
     }
 
     @Override
-    public DatabaseSerializable from(Map<String, Object> keys) {
-        String jsonString = (String) keys.get("json");
+    public boolean dirty() {
+        return dirty;
+    }
 
-        return new Gson().fromJson(jsonString, getClass());
+    @Override
+    public void clean() {
+        dirty = false;
+    }
+
+    @Override
+    public CompletableFuture<Boolean> delete() {
+        return Getters.database().deleteHologram(this);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> update() {
+        return Getters.database().updateHologram(this);
+    }
+
+    public static DBHologram fromResultSet(ResultSet result) throws SQLException {
+        UUID id = UUID.fromString(result.getString("id"));
+        String name = result.getString("name");
+        String location = result.getString("location");
+        Type type = new TypeToken<List<String>>() {}.getType();
+        List<String> contents = new Gson().fromJson(result.getString("contents"), type);
+
+        return new DBHologram(id, name, location, contents, false);
     }
 
     @Override
@@ -116,15 +133,11 @@ public class DBHologram implements DatabaseSerializable {
     public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
 
+        map.put("id", id);
         map.put("name", name);
-        map.put("json", new Gson().toJson(this));
+        map.put("location", location);
+        map.put("contents", new Gson().toJson(contents));
 
         return map;
-    }
-
-    public String toJson() {
-        Map<String, Object> m = this.serialize();
-
-        return new Gson().toJson(m);
     }
 }

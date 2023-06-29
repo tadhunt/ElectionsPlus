@@ -66,14 +66,14 @@ public class CloseChild extends SubCommand {
 
         String name = a.get(0);
 
-        Cache<UUID, Election> cache = plugin.getCache().getElections();
-        Election election = cache.findByName(name);
+        Cache<UUID, Election> elections = plugin.getCache().getElections();
+        Election election = elections.findByName(name);
         if (election == null) {
-            Messages.send(user.audience(), true, Messages.single("name", electionName), "errors", "election-not-found");
+            Messages.send(user.audience(), true, Messages.single("name", name), "errors", "election-not-found");
             return;
         }
         election.close();
-        cache.persist();
+        elections.persist();
         Messages.send(user.audience(), true, Messages.single("name", election.getName()), "close", "closed");
     }
 }

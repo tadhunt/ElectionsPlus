@@ -25,6 +25,8 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.elections.menus.ElectionsMenu;
 import me.lorenzo0111.pluginslib.audience.User;
@@ -32,12 +34,18 @@ import me.lorenzo0111.pluginslib.command.Command;
 import me.lorenzo0111.pluginslib.command.SubCommand;
 import me.lorenzo0111.pluginslib.command.annotations.NoArguments;
 import me.lorenzo0111.pluginslib.command.annotations.Permission;
+
+import java.util.UUID;
+
 import org.bukkit.entity.Player;
 
 public class ListChild extends SubCommand {
+    private final ElectionsPlus plugin;
 
-    public ListChild(Command command) {
+    public ListChild(Command command, ElectionsPlus plugin) {
         super(command);
+
+        this.plugin = plugin;
     }
 
     @Override
@@ -54,9 +62,8 @@ public class ListChild extends SubCommand {
             return;
         }
 
-        ElectionsPlus.getInstance()
-                .getManager()
-                .getElections()
-                .thenAccept((elections) -> new ElectionsMenu((Player) sender.player(), elections, ElectionsPlus.getInstance()).setup());
+        Cache<UUID, Election> elections = plugin.getCache().getElections();
+
+        new ElectionsMenu((Player) sender.player(), elections, plugin).setup();
     }
 }

@@ -24,15 +24,20 @@
 
 package me.lorenzo0111.elections.constants;
 
+import me.lorenzo0111.elections.cache.CacheManager;
 import me.lorenzo0111.elections.database.IDatabaseManager;
 import me.lorenzo0111.pluginslib.updater.UpdateChecker;
 
 public final class Getters {
+    private static CacheManager cache;
     private static IDatabaseManager database;
     private static UpdateChecker updater;
 
     public static IDatabaseManager database() { return database; }
     public static void database(IDatabaseManager database) { Getters.database = database; }
+
+    public static CacheManager cache() { return cache; }
+    public static void cache(CacheManager cache) { Getters.cache = cache; }
 
     public static UpdateChecker updater() { return updater; }
     public static void updater(UpdateChecker updater) { Getters.updater = updater; }

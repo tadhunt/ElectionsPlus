@@ -92,7 +92,12 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
 
         for (V value : cache.values()) {
             if (value.dirty()) {
-                value.update();
+                value.update()
+                    .thenAccept((success) -> {
+                        if (success) {
+                            value.clean();
+                        }
+                    });
             }
         }
     }

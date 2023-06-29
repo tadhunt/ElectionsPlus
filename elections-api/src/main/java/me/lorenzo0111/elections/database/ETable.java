@@ -25,7 +25,6 @@
 package me.lorenzo0111.elections.database;
 
 import me.lorenzo0111.pluginslib.StringUtils;
-import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
 import me.lorenzo0111.pluginslib.database.connection.IConnectionHandler;
 import me.lorenzo0111.pluginslib.database.connection.JavaConnection;
 import me.lorenzo0111.pluginslib.database.objects.Column;
@@ -87,41 +86,6 @@ public class ETable {
     }
 
     /**
-     * Convert a ResultSet to a Database Serializable
-     * @param set ResultSet to convert
-     * @param serializable an instance of a serializable that has the {@link DatabaseSerializable#from(Map)} method
-     * @return A future with a list of serializable
-     */
-    public CompletableFuture<List<DatabaseSerializable>> convertResult(ResultSet set, DatabaseSerializable serializable) {
-        CompletableFuture<List<DatabaseSerializable>> future = new CompletableFuture<>();
-
-        this.run(() -> {
-            try {
-                List<DatabaseSerializable> list = new ArrayList<>();
-
-                while (set.next()) {
-                    Map<String, Object> map = new HashMap<>();
-                    columns.forEach((column) -> {
-                        try {
-                            map.put(column.getName(), set.getObject(column.getName()));
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    list.add(serializable.from(map));
-                }
-
-                future.complete(list);
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        });
-
-        return future;
-    }
-
-    /**
      * Get all items from table
      * @return a result set with all the entries of the table
      */
@@ -145,11 +109,16 @@ public class ETable {
     }
 
     /**
-     * Adds or replaces a {@link DatabaseSerializable} to the table
+     * Adds or replaces a {@link EDatabaseSerializable} to the table
      * @param serializable Item to add to the table
      */
-    public CompletableFuture<Boolean> addOrReplace(DatabaseSerializable serializable) {
+    public CompletableFuture<Boolean> addOrReplace(EDatabaseSerializable serializable) {
         CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
+
+        if (!serializable.dirty()) {
+            future.complete(true);
+            return future;
+        }
 
         this.run(() -> {
             try {

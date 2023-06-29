@@ -24,27 +24,54 @@
 
 package me.lorenzo0111.elections.api.objects;
 
-import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
 import org.jetbrains.annotations.NotNull;
 
+import com.google.gson.Gson;
+
+import me.lorenzo0111.elections.constants.Getters;
+import me.lorenzo0111.elections.database.EDatabaseSerializable;
+
+import com.google.common.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
  
-public class ElectionBlock implements DatabaseSerializable {
+public class ElectionBlock implements EDatabaseSerializable, ICacheEntry {
+    private final UUID id;
     private final UUID world;
     private final Map<String, Object> location;
     private final String blockData;
+    private boolean dirty;
 
-    public ElectionBlock(UUID world, Map<String, Object> location, String blockData) {
+    public ElectionBlock(UUID id, UUID world, Map<String, Object> location, String blockData, boolean dirty) {
+        this.id = id;
         this.world = world;
         this.location = location;
         this.blockData = blockData;
+        this.dirty = dirty;
     }
 
-    @Override
-    public DatabaseSerializable from(Map<String, Object> keys) throws RuntimeException {
-        throw new RuntimeException("You can't deserialize this class. You have to do that manually.");
+    public UUID getId() {
+        return id;
+    }
+    
+    public String getName() {
+        return id.toString();
+    }
+
+    public static ElectionBlock fromResultSet(ResultSet result) throws SQLException {
+        UUID id = UUID.fromString(result.getString("id"));
+        UUID world = UUID.fromString(result.getString("world"));
+        Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
+        Map<String, Object> location = new Gson().fromJson(result.getString("location"), type);
+        String blockData = result.getString("blockdata");
+
+        return new ElectionBlock(id, world, location, blockData, false);
     }
 
     @Override
@@ -56,8 +83,9 @@ public class ElectionBlock implements DatabaseSerializable {
     public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
 
-        map.put("world", world);
-        map.put("location", location);
+        map.put("id", id.toString());
+        map.put("world", world.toString());
+        map.put("location", new Gson().toJson(location));
         map.put("blockdata", blockData);
 
         return map;
@@ -101,5 +129,23 @@ public class ElectionBlock implements DatabaseSerializable {
 
         return true;
     }
-}
 
+    @Override
+    public CompletableFuture<Boolean> delete() {
+        return Getters.database().deleteBlock(this);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> update() {
+        return Getters.database().updateBlock(this);
+    }
+
+    @Override
+    public void clean() {
+        dirty = false;
+    }
+
+    public boolean dirty() {
+        return dirty;
+    }
+}

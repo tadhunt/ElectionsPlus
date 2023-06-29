@@ -25,6 +25,8 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.conversation.ConversationUtil;
 import me.lorenzo0111.elections.conversation.conversations.NameConversation;
@@ -37,6 +39,7 @@ import me.lorenzo0111.pluginslib.command.annotations.Permission;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
@@ -75,17 +78,20 @@ public class CreateChild extends SubCommand {
             return;
         }
 
-        String electionName = a.get(0);
-        plugin.getManager()
-        .createElection(electionName, new HashMap<String,Party>())
-        .thenAccept(election -> {
-            if (election == null) {
-                Messages.send(player, true, "errors", "election-exists");
-                return;
-            }
+        String name = a.get(0);
 
-            Messages.send(player, true, Messages.single("name", electionName), "election", "created");
-            plugin.holoRefresh();
-        });
+        Cache<UUID, Election> elections = plugin.getCache().getElections();
+        if (elections.findByName(name) != null) {
+            Messages.send(player, true, "errors", "election-exists");
+            return;
+        }
+
+        Election election = new Election(UUID.randomUUID(), name, null, true, true);
+
+        elections.add(election.getId(), election);
+
+        plugin.holoRefresh();
+
+        Messages.send(player, true, Messages.single("name", name), "election", "created");
     }
 }

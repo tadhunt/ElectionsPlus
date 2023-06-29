@@ -24,12 +24,9 @@
 
 package me.lorenzo0111.elections.database;
 
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
@@ -43,22 +40,18 @@ import me.lorenzo0111.pluginslib.database.connection.HikariConnection;
 import me.lorenzo0111.pluginslib.database.connection.IConnectionHandler;
 import me.lorenzo0111.pluginslib.database.connection.SQLiteConnection;
 import me.lorenzo0111.pluginslib.database.objects.Column;
-import me.ryanhamshire.GriefPrevention.Claim;
 
 import org.spongepowered.configurate.ConfigurationNode;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -73,14 +66,12 @@ public class DatabaseManager implements IDatabaseManager {
     private ETable claimsTable;
 
     private final IConnectionHandler connectionHandler;
-    private final CacheManager cache;
 
     public DatabaseManager(Logger logger, IAdvancedScheduler scheduler, CacheManager cache, ConfigurationNode config, IConnectionHandler handler) {
         this.logger = logger;
         this.connectionHandler = handler;
 
         this.tables(scheduler, cache, config);
-        this.cache = cache;
     }
 
     public DatabaseManager(Logger logger, ConfigurationNode configuration, CacheManager cache, Path directory, IAdvancedScheduler scheduler) throws SQLException {
@@ -117,7 +108,6 @@ public class DatabaseManager implements IDatabaseManager {
         this.connectionHandler = handler;
 
         this.tables(scheduler, cache, configuration);
-        this.cache = cache;
     }
 
     private void tables(IAdvancedScheduler scheduler, CacheManager cache, ConfigurationNode config) {
@@ -184,6 +174,7 @@ public class DatabaseManager implements IDatabaseManager {
         scheduler.repeating(new CacheTask(this, cache), 0L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
     }
 
+    /* 
     public ETable getPartiesTable() {
         return partiesTable;
     }
@@ -207,6 +198,7 @@ public class DatabaseManager implements IDatabaseManager {
     public ETable getClaimsTable() {
         return claimsTable;
     }
+    */
 
     @Override
     public void closeConnection() throws SQLException {
@@ -217,7 +209,7 @@ public class DatabaseManager implements IDatabaseManager {
     public CompletableFuture<List<Vote>> getVotes() {
         CompletableFuture<List<Vote>> future = new CompletableFuture<>();
 
-        this.getVotesTable().run(() -> {
+        this.votesTable.run(() -> {
                 try {
                     PreparedStatement statement = votesTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", votesTable.getName()));
                     ResultSet resultSet = statement.executeQuery();
@@ -250,9 +242,9 @@ public class DatabaseManager implements IDatabaseManager {
     public CompletableFuture<Map<String, Party>> getParties() {
         CompletableFuture<Map<String, Party>> future = new CompletableFuture<>();
 
-        this.getPartiesTable().run(() -> {
+        this.partiesTable.run(() -> {
                 try {
-                    PreparedStatement statement = votesTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", votesTable.getName()));
+                    PreparedStatement statement = partiesTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", partiesTable.getName()));
                     ResultSet resultSet = statement.executeQuery();
                     Map<String, Party> parties = new HashMap<>();
                     while (resultSet.next()) {
@@ -283,9 +275,9 @@ public class DatabaseManager implements IDatabaseManager {
     public CompletableFuture<Map<String, Election>> getElections() {
         CompletableFuture<Map<String, Election>> future = new CompletableFuture<>();
 
-        this.getElectionsTable().run(() -> {
+        this.electionsTable.run(() -> {
                 try {
-                    PreparedStatement statement = votesTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", votesTable.getName()));
+                    PreparedStatement statement = electionsTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", electionsTable.getName()));
                     ResultSet resultSet = statement.executeQuery();
                     Map<String, Election> elections = new HashMap<>();
                     while (resultSet.next()) {
@@ -313,6 +305,29 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
+    public CompletableFuture<List<ElectionBlock>> getBlocks() {
+        CompletableFuture<List<ElectionBlock>> future = new CompletableFuture<>();
+
+        this.blocksTable.run(() -> {
+                try {
+                    PreparedStatement statement = blocksTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", blocksTable.getName()));
+                    ResultSet resultSet = statement.executeQuery();
+                    List<ElectionBlock> blocks = new ArrayList<>();
+                    while (resultSet.next()) {
+                        ElectionBlock block = ElectionBlock.fromResultSet(resultSet);
+                        blocks.add(block);
+                    }
+                    future.complete(blocks);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    future.complete(null);
+                }
+        });
+
+        return future;
+    }
+    
+    @Override
     public CompletableFuture<Boolean> updateBlock(ElectionBlock block) {
         return blocksTable.addOrReplace(block);
     }
@@ -323,13 +338,59 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
+    public CompletableFuture<Map<String, DBHologram>> getHolograms() {
+        CompletableFuture<Map<String, DBHologram>> future = new CompletableFuture<>();
+
+        this.hologramsTable.run(() -> {
+                try {
+                    PreparedStatement statement = hologramsTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", hologramsTable.getName()));
+                    ResultSet resultSet = statement.executeQuery();
+                    Map<String, DBHologram> holograms = new HashMap<>();
+                    while (resultSet.next()) {
+                        DBHologram dbholo = DBHologram.fromResultSet(resultSet);
+                        holograms.put(dbholo.getName(), dbholo);
+                    }
+                    future.complete(holograms);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    future.complete(null);
+                }
+        });
+
+        return future;
+    }
+    
+    @Override
     public CompletableFuture<Boolean> updateHologram(DBHologram dbholo) {
         return hologramsTable.addOrReplace(dbholo);
     }
 
     @Override
     public CompletableFuture<Boolean> deleteHologram(DBHologram dbholo) {
-        return partiesTable.removeWhere("id", dbholo.getId());
+        return hologramsTable.removeWhere("id", dbholo.getId());
+    }
+
+    @Override
+    public CompletableFuture<Map<String, EClaim>> getClaims() {
+        CompletableFuture<Map<String, EClaim>> future = new CompletableFuture<>();
+
+        this.claimsTable.run(() -> {
+                try {
+                    PreparedStatement statement = claimsTable.getConnection().prepareStatement(String.format("SELECT * FROM %s;", claimsTable.getName()));
+                    ResultSet resultSet = statement.executeQuery();
+                    Map<String, EClaim> claims = new HashMap<>();
+                    while (resultSet.next()) {
+                        EClaim eclaim = EClaim.fromResultSet(resultSet);
+                        claims.put(eclaim.getName(), eclaim);
+                    }
+                    future.complete(claims);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    future.complete(null);
+                }
+        });
+
+        return future;
     }
 
     @Override
@@ -338,198 +399,7 @@ public class DatabaseManager implements IDatabaseManager {
     }
 
     @Override
-    public CompletableFuture<Boolean> deleteClaim(EClaim claim) {
+    public CompletableFuture<Boolean> deleteClaim(EClaim eclaim) {
         return claimsTable.removeWhere("id", eclaim.getId());
-    }
-
-    @Override
-    public CompletableFuture<List<ElectionBlock>> getElectionBlocks() {
-        CompletableFuture<List<ElectionBlock>> future = new CompletableFuture<>();
-
-        getBlocksTable().run(() -> {
-            try {
-                Statement statement = connectionHandler.getConnection().createStatement();
-                String query = String.format("SELECT * FROM %s;", getBlocksTable().getName());
-                ResultSet resultSet = statement.executeQuery(query);
-
-                List<ElectionBlock> electionBlocks = new ArrayList<>();
-                Gson gson = new Gson();
-                while (resultSet.next()) {
-                    Type type = new TypeToken<Map<String, Object>>() {}.getType();
-                    Map<String, Object> location = new HashMap<String, Object>(gson.fromJson(resultSet.getString("location"), type));
-                    UUID world = UUID.fromString(resultSet.getString("world"));
-                    String blockData = resultSet.getString("blockdata");
-
-                    ElectionBlock electionBlock = new ElectionBlock(world, location, blockData);
-
-                    electionBlocks.add(electionBlock);
-                }
-
-                future.complete(electionBlocks);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                future.complete(null);
-            }
-        });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<ElectionBlock> createElectionBlock(UUID world, Map<String, Object> location, String blockData) {
-        CompletableFuture<ElectionBlock> future = new CompletableFuture<>();
-
-        blocksTable.find("location", location)
-                .thenAccept((resultSet) -> {
-                    try {
-                        while (resultSet.next()) {
-                            UUID w = UUID.fromString(resultSet.getString("world"));
-                            if (w.equals(world)) {
-                                future.complete(null);
-                                return;
-                            }
-                        }
-
-                        ElectionBlock electionBlock = new ElectionBlock(world, location, blockData);
-                        blocksTable.add(electionBlock);
-                        future.complete(electionBlock);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Boolean> deleteElectionBlock(ElectionBlock electionBlock) {
-        CompletableFuture<Boolean> future = new CompletableFuture<Boolean>();
-        // TODO(tadhunt): correctly handle different worlds
-        blocksTable
-            .removeWhere("location", electionBlock.getLocation())
-            .thenAccept((o) -> {
-                future.complete(true);
-            });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Map<String, DBHologram>> getHolograms() {
-        CompletableFuture<Map<String, DBHologram>> future = new CompletableFuture<>();
-
-        getHologramsTable().run(() -> {
-            try {
-                Statement statement = connectionHandler.getConnection().createStatement();
-                String query = String.format("SELECT * FROM %s;", getHologramsTable().getName());
-                ResultSet resultSet = statement.executeQuery(query);
-
-                HashMap<String, DBHologram> holograms = new HashMap<String, DBHologram>();
-
-                while (resultSet.next()) {
-                    String jsonString = resultSet.getString("json");
-
-                    DBHologram hologram = new Gson().fromJson(jsonString, DBHologram.class);
-                    holograms.put(hologram.getName(), hologram);
-                }
-
-                future.complete(holograms);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                future.complete(null);
-            }
-        });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<DBHologram> createHologram(String name, String location, List<String> contents) {
-        DBHologram hologram = new DBHologram(name, location, contents);
-        CompletableFuture<DBHologram> future = new CompletableFuture<>();
-        hologramsTable.find("name", name)
-                .thenAccept((resultSet) -> {
-                    try {
-                        if (resultSet.next()) {
-                                future.complete(null);
-                                return;
-                        }
-
-                        hologramsTable.add(hologram);
-                        future.complete(hologram);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Map<String, EClaim>> getClaims() {
-        CompletableFuture<Map<String, EClaim>> future = new CompletableFuture<>();
-
-        getClaimsTable().run(() -> {
-            try {
-                Statement statement = connectionHandler.getConnection().createStatement();
-                String query = String.format("SELECT * FROM %s;", getClaimsTable().getName());
-                ResultSet resultSet = statement.executeQuery(query);
-
-                HashMap<String, EClaim> claims = new HashMap<String, EClaim>();
-
-                while (resultSet.next()) {
-                    EClaim claim = EClaim.fromResultSet(resultSet);
-                    claims.put(claim.getName(), claim);
-                }
-
-                future.complete(claims);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                future.complete(null);
-            }
-        });
-
-        return future;
-    }
-
-    public CompletableFuture<EClaim> getClaimById(Long id) {
-        return getClaim("id", id.toString());
-    }
-
-    public CompletableFuture<EClaim> getClaimByName(String name) {
-        return getClaim("name", name);
-    }
-
-    private CompletableFuture<EClaim> getClaim(String key, String value) {
-        CompletableFuture<EClaim> future = new CompletableFuture<>();
-
-        getClaimsTable().run(() -> {
-            try {
-                Statement statement = connectionHandler.getConnection().createStatement();
-                String query = String.format("SELECT * FROM %s WHERE %s = '%s';", getClaimsTable().getName(), key, value);
-                ResultSet resultSet = statement.executeQuery(query);
-
-                Integer nClaims = 0;
-                EClaim claim = null;
-
-                while (resultSet.next()) {
-                    claim = EClaim.fromResultSet(resultSet);
-                    nClaims++;
-                }
-
-                if (nClaims != 1) {
-                    this.logger.severe(String.format("getClaim: got %d claims for key %s value %s (expected 0 or 1)", nClaims, key, value));
-                    future.complete(null);
-                }
-
-                future.complete(claim);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                future.complete(null);
-            }
-        });
-
-        return future;
-
     }
 }

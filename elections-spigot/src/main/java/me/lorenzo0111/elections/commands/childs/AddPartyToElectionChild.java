@@ -25,6 +25,7 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.handlers.Messages;
@@ -34,8 +35,7 @@ import me.lorenzo0111.pluginslib.command.SubCommand;
 import me.lorenzo0111.pluginslib.command.annotations.Permission;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.entity.Player;
 
@@ -67,53 +67,39 @@ public class AddPartyToElectionChild extends SubCommand {
            return;
         }
 
-        plugin.getManager()
-           .getElections()
-           .thenAccept((elections) -> handleElections(sender, a, elections));
-        }
-        
-        private void handleElections(User<?> sender, ArrayList<String> args, List<Election> elections) {
-            String electionName = args.remove(0);
-            
-            for(Election election : elections) {
-                if (election.getName().equals(electionName)) {
-                    electionAddParties(election, sender, args);
-                    return;
-                }
-            }
-            
-            Messages.send(sender.audience(), true, Messages.single("name", electionName), "errors", "election-not-found");
-        }
-        
-    private void electionAddParties(Election election, User<?> sender, ArrayList<String> args) {
-        plugin.getManager().getParties()
-            .thenAccept((parties) -> {
-                Boolean dirty = false;
-                Map<String, Party> electionParties = election.getParties();
-                
-                for (String partyName : args) {
-                    Party party = parties.get(partyName);
-                    if (party == null) {
-                        Messages.send(sender.audience(), true, Messages.single("party", partyName), "errors", "party-not-found");
-                        return;
-                    }
+        String electionName = a.remove(0);
 
-                    if (electionParties.get(party.getName()) != null) {
-                        Messages.send(sender.audience(), true, Messages.single("party", partyName), "errors", "party-already-added");
-                        continue;
-                    }
-                    
-                    electionParties.put(party.getName(), party);
-                    dirty = true;
-                    Messages.send(sender.audience(), true, Messages.multiple("party", partyName, "election", election.getName()), "election", "party-added");
-                }
+        Cache<UUID, Election> elections = plugin.getCache().getElections();
+        Cache<UUID, Party> parties = plugin.getCache().getParties();
+
+        boolean dirty = false;
+        Election election = elections.findByName(electionName);
+        if (election == null) {
+            Messages.send(sender.audience(), true, Messages.single("name", electionName), "errors", "election-not-found");
+            return;
+        }
                 
-                if (dirty) {
-                    Election newElection = new Election(election.getId(), election.getName(), electionParties, election.isOpen());
-                    plugin.getManager().updateElection(newElection);
-                } else {
-                    Messages.send(sender.audience(), true, Messages.single("election", election.getName()), "election", "nochange");
-                }
-            });
+        for (String partyName : a) {
+            Party party = parties.findByName(partyName);
+            if (party == null) {
+                Messages.send(sender.audience(), true, Messages.single("party", partyName), "errors", "party-not-found");
+                return;
+            }
+
+            if (election.getParties().containsKey(party.getId())) {
+                Messages.send(sender.audience(), true, Messages.single("party", party.getName()), "errors", "party-already-added");
+                continue;
+            }
+
+            dirty = true;
+            election.addParty(party.getId());
+            Messages.send(sender.audience(), true, Messages.multiple("party", partyName, "election", election.getName()), "election", "party-added");
+        }
+
+        if (dirty) {
+            elections.persist();
+        } else {
+            Messages.send(sender.audience(), true, Messages.single("election", election.getName()), "election", "nochange");
+        }
     }
 }

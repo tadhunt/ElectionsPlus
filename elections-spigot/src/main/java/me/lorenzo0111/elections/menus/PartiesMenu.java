@@ -30,6 +30,7 @@ import dev.triumphteam.gui.builder.item.SkullBuilder;
 import dev.triumphteam.gui.components.InteractionModifier;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.conversation.ConversationUtil;
 import me.lorenzo0111.elections.conversation.conversations.CreatePartyConversation;
@@ -42,13 +43,14 @@ import org.bukkit.entity.Player;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 public class PartiesMenu extends PaginatedGui {
     private final Player owner;
-    private final Map<String, Party> parties;
+    private final Cache<UUID, Party> parties;
     private final ElectionsPlus plugin;
 
-    public PartiesMenu(Player owner, Map<String, Party> parties, ElectionsPlus plugin) {
+    public PartiesMenu(Player owner, Cache<UUID, Party> parties, ElectionsPlus plugin) {
         super(3, 17, Messages.componentString(false, "guis", "parties"), EnumSet.noneOf(InteractionModifier.class));
 
         this.owner = owner;
@@ -74,7 +76,7 @@ public class PartiesMenu extends PaginatedGui {
 
             this.getFiller().fillBottom(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
 
-            for (Party party : parties.values()) {
+            for (Party party : parties.map().values()) {
                 SkullBuilder item = ItemBuilder.skull()
                         .name(Component.text("§9" + party.getName()))
                         .lore(canEdit(owner, party) ? Messages.component(false, "guis", "edit-party") : Messages.component(false, "guis", "no-edit-party"));
@@ -100,7 +102,7 @@ public class PartiesMenu extends PaginatedGui {
         return owner;
     }
 
-    public Map<String, Party> getParties() {
+    public Cache<UUID, Party> getParties() {
         return parties;
     }
 

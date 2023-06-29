@@ -25,6 +25,8 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.ElectionBlock;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.elections.menus.ElectionsMenu;
@@ -63,27 +65,20 @@ public class VoteBlockChild extends SubCommand implements Listener {
     }
 
     private void setup() {
-        plugin.getManager()
-        .getElectionBlocks()
-        .thenAccept(electionBlocks -> {
-            if (electionBlocks == null) {
-                    return;
+        Cache<UUID, ElectionBlock> cacheBlocks = plugin.getCache().getBlocks();
+
+        for (ElectionBlock electionBlock : cacheBlocks.map().values()) {
+            Map<String, Object> rawLocation = electionBlock.getLocation();
+            Location location = Location.deserialize(rawLocation);
+
+            World world = Bukkit.getWorld("world");
+            Block block = world.getBlockAt(location);
+            String blockData = block.getBlockData().getAsString();
+
+            if (electionBlock.getBlockData().equals(blockData)) {
+                blocks.add(block);
             }
-
-            for (ElectionBlock electionBlock : electionBlocks) {
-                Map<String, Object> rawLocation = electionBlock.getLocation();
-                Location location = Location.deserialize(rawLocation);
-
-                World world = Bukkit.getWorld("world");
-                Block block = world.getBlockAt(location);
-                String blockData = block.getBlockData().getAsString();
-
-                if (electionBlock.getBlockData().equals(blockData)) {
-                    blocks.add(block);
-                }
-            }
-        });
-
+        }
     }
 
     @Override
@@ -130,30 +125,50 @@ public class VoteBlockChild extends SubCommand implements Listener {
 
     private void create(User<?>sender, Block block) {
         UUID world = block.getWorld().getUID();
-        Map<String, Object> location = block.getLocation().serialize();
+        Location location = block.getLocation();
         String blockData = block.getBlockData().getAsString();
 
-        plugin.getManager()
-            .createElectionBlock(world, location, blockData)
-            .thenAccept(electionBlock -> {
-                if (electionBlock == null) {
-                        Messages.send(sender.audience(), true, "errors", "block-already-exists");
-                        return;
-                }
+        Cache <UUID, ElectionBlock> eblocks = plugin.getCache().getBlocks();
 
-                Messages.send(sender.audience(), true, "vote-block", "created");
-                this.blocks.add(block);
-            });
+        if (findElectionBlock(eblocks, world, location) != null) {
+            Messages.send(sender.audience(), true, "errors", "block-already-exists");
+            return;
+        }
+
+        ElectionBlock eblock = new ElectionBlock(UUID.randomUUID(), world, location.serialize(), blockData, true);
+        eblocks.add(eblock.getId(), eblock);
+        eblocks.persist();
+
+        this.blocks.add(block);
+
+        Messages.send(sender.audience(), true, "vote-block", "created");
+    }
+
+    private ElectionBlock findElectionBlock(Cache<UUID, ElectionBlock> eblocks, UUID world, Location location) {
+        for(ElectionBlock cblock : eblocks.map().values()) {
+            Location cloc = Location.deserialize(cblock.getLocation());
+
+            if (cblock.getWorld().equals(world) && cloc.equals(location)) {
+                return cblock;
+            }
+        }
+
+        return null;
     }
 
     private void delete(User<?>sender, Block block) {
         UUID world = block.getWorld().getUID();
-        Map<String, Object> location = block.getLocation().serialize();
-        String blockData = block.getBlockData().getAsString();
+        Location location = block.getLocation();
 
-        ElectionBlock electionBlock = new ElectionBlock(world, location, blockData);
-        plugin.getManager()
-            .deleteElectionBlock(electionBlock);
+        Cache <UUID, ElectionBlock> eblocks = plugin.getCache().getBlocks();
+        ElectionBlock eblock = findElectionBlock(eblocks, world, location);
+
+        if (eblock == null) {
+            Messages.send(sender.audience(), true, "vote-block", "not-found");
+        }
+
+        eblocks.remove(eblock.getId());
+        eblocks.persist();
 
         this.blocks.remove(block);
 
@@ -175,10 +190,8 @@ public class VoteBlockChild extends SubCommand implements Listener {
             return;
         }
 
-        plugin
-            .getManager()
-            .getElections()
-            .thenAccept((elections) -> new ElectionsMenu(player, elections, ElectionsPlus.getInstance()).setup());
+        Cache<UUID, Election> elections = plugin.getCache().getElections();
+        new ElectionsMenu(player, elections, ElectionsPlus.getInstance()).setup();
     }
 
     @EventHandler

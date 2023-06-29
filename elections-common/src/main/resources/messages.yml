@@ -163,7 +163,7 @@ election:
 #
 parties:
   created: "<gray>Party <yellow><party><gray> created."
-  deleted: "<gray>Party deleted. <i>(Refresh may take a few seconds)."
+  deleted: "<gray>Party <yellow>party <gray>deleted."
   duplicate: "<red>A party with that name already exists."
   no-permission-delete: "<red>You can't delete this party."
   user-added: "<yellow><name><gray> added to party <yellow><party><gray>."
@@ -196,6 +196,7 @@ plugin:
 vote-block:
   created: "<gray>Vote block created."
   deleted: "<gray>Vote block deleted."
+  not-found: "<red>Vote block not found."
 
 #
 # Placeholders

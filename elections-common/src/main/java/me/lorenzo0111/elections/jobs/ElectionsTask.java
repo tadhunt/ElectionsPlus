@@ -24,15 +24,17 @@
 
 package me.lorenzo0111.elections.jobs;
 
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Election;
+import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.constants.Getters;
-import me.lorenzo0111.elections.database.IDatabaseManager;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class ElectionsTask implements Job {
-
     @Override
     public void execute(JobExecutionContext context) {
         LocalDateTime time = LocalDateTime.now();
@@ -40,9 +42,11 @@ public class ElectionsTask implements Job {
                 .replace("%m", String.valueOf(time.getMonthValue()))
                 .replace("%d", String.valueOf(time.getDayOfMonth()));
 
-        IDatabaseManager database = Getters.database();
-        database.getParties()
-                .thenAccept((parties) -> database.createElection(name, parties));
-    }
+        Cache<UUID, Party> parties = Getters.cache().getParties();
+        Cache<UUID, Election> elections = Getters.cache().getElections();
 
+        Election election = new Election(UUID.randomUUID(), name, parties.map().keySet(), true, true);
+        elections.add(election.getId(), election);
+        elections.persist();
+    }
 }

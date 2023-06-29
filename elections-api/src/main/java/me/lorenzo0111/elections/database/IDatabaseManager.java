@@ -52,8 +52,8 @@ public interface IDatabaseManager {
     CompletableFuture<Boolean> deleteParty(Party party);
 
     CompletableFuture<List<Vote>> getVotes();
-    CompletableFuture<?> updateVote(Vote vote);
-    CompletableFuture<?> deleteVote(Vote vote);
+    CompletableFuture<Boolean> updateVote(Vote vote);
+    CompletableFuture<Boolean> deleteVote(Vote vote);
 
     CompletableFuture<List<ElectionBlock>> getBlocks();
     CompletableFuture<Boolean> updateBlock(ElectionBlock electionBlock);

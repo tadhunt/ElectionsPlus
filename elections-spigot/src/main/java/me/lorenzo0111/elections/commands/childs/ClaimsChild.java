@@ -89,7 +89,7 @@ public class ClaimsChild extends SubCommand {
 
             String name = a.get(0);
             Claim gclaim = gp.dataStore.getClaimAt(player.getLocation(), false, null);
-            if (claim == null) {
+            if (gclaim == null) {
                 Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "create-no-claim-here");
                 return;
             }

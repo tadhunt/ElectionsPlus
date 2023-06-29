@@ -25,6 +25,7 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.conversation.ConversationUtil;
 import me.lorenzo0111.elections.conversation.conversations.CreatePartyConversation;
@@ -36,7 +37,7 @@ import me.lorenzo0111.pluginslib.command.SubCommand;
 import me.lorenzo0111.pluginslib.command.annotations.Permission;
 
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -66,10 +67,8 @@ public class PartiesChild extends SubCommand {
         Player player = (Player)sender.player();
 
         if (args.length < 2) {
-            plugin.getManager()
-                .getParties()
-                .thenAccept((parties) -> new PartiesMenu
-                 (player, parties, plugin).setup());
+            Cache<UUID, Party> parties = plugin.getCache().getParties();
+            new PartiesMenu(player, parties, plugin).setup();
             return;
         }
 
@@ -105,7 +104,14 @@ public class PartiesChild extends SubCommand {
                     return;
                 }
 
-                this.plugin.getManager().deleteParty(partyName);
+                Cache<UUID, Party> parties = plugin.getCache().getParties();
+                Party party = parties.findByName(partyName);
+                if (party == null) {
+                    player.sendMessage(Messages.componentString(true, Messages.single("party", partyName), "errors", "party-not-found"));
+                    return;
+                }
+
+                this.plugin.deleteParty(party);
                 player.sendMessage(Messages.componentString(true, "parties", "deleted"));
                 break;
             }
@@ -130,10 +136,23 @@ public class PartiesChild extends SubCommand {
                     return;
                 }
 
-                plugin.getManager()
-                    .getParties()
-                    .thenAccept((parties) -> addMember(player, parties, partyName, memberName));
+                OfflinePlayer member = Bukkit.getPlayer(memberName);
+                if (member == null) {
+                    player.sendMessage(Messages.componentString(true, Messages.single("name", memberName), "errors", "user-not-online"));
+                    return;
+                }
 
+                Cache <UUID, Party> parties = plugin.getCache().getParties();
+                Party party = parties.findByName(partyName);
+                if (party == null) {
+                    player.sendMessage(Messages.componentString(true, Messages.single("party", partyName), "errors", "party-not-found"));
+                    return;
+                }
+
+                party.addMember(member.getUniqueId());
+                parties.persist();
+
+                player.sendMessage(Messages.componentString(true, Messages.multiple("name", member.getName(), "party", party.getName()), "parties", "user-added"));
                 break;
             }
 
@@ -141,21 +160,5 @@ public class PartiesChild extends SubCommand {
         }
 
         player.sendMessage(Messages.componentString(true, "errors", "command-not-found"));
-    }
-
-    private void addMember(Player player, Map<String, Party> parties, String partyName, String memberName) {
-        OfflinePlayer member = Bukkit.getPlayer(memberName);
-        if (member == null) {
-            player.sendMessage(Messages.componentString(true, Messages.single("name", memberName), "errors", "user-not-online"));
-            return;
-        }
-
-        Party party = parties.get(partyName);
-        if (party != null) {
-            party.addMember(member.getUniqueId());
-            player.sendMessage(Messages.componentString(true, Messages.multiple("name", member.getName(), "party", party.getName()), "parties", "user-added"));
-        } else  {
-            player.sendMessage(Messages.componentString(true, Messages.single("party", partyName), "errors", "party-not-found"));
-        }
     }
 }

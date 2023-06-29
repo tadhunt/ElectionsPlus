@@ -26,14 +26,7 @@ package me.lorenzo0111.elections.api.implementations;
 
 import me.lorenzo0111.elections.ElectionsPlus;
 import me.lorenzo0111.elections.api.IElectionsPlusAPI;
-import me.lorenzo0111.elections.api.objects.Election;
-import me.lorenzo0111.elections.api.objects.Party;
-import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.cache.CacheManager;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 public class ElectionsPlusAPI implements IElectionsPlusAPI {
     private final ElectionsPlus plugin;
@@ -45,71 +38,5 @@ public class ElectionsPlusAPI implements IElectionsPlusAPI {
     @Override
     public CacheManager getCache() {
         return plugin.getCache();
-    }
-
-    @Override
-    public CompletableFuture<List<Vote>> getVotes() {
-        return plugin.getManager().getVotes();
-    }
-
-    @Override
-    public CompletableFuture<Vote> getVote(UUID player, UUID electionId, String party) {
-        CompletableFuture<Vote> future = new CompletableFuture<>();
-
-        plugin.getManager()
-                .getVotes()
-                .thenAccept(v -> {
-                    Vote vote = v.stream()
-                            .filter(f -> f.getPlayer().equals(player))
-                            .filter(f -> f.getElectionId().equals(electionId))
-                            .filter(f -> f.getParty().equals(party))
-                            .findFirst()
-                            .orElse(null);
-
-                    future.complete(vote);
-                });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Party> getParty(String name) {
-        CompletableFuture<Party> future = new CompletableFuture<>();
-
-        plugin.getManager()
-                .getParties()
-                .thenAccept((parties) -> {
-                    future.complete(parties.get(name));
-                });
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<Election> getElection(String name) {
-        CompletableFuture<Election> future = new CompletableFuture<>();
-
-        this.getElections()
-                .thenAccept((l) -> future.complete(l.stream()
-                        .filter(election -> election.getName().equals(name))
-                        .findFirst()
-                        .orElse(null)));
-
-        return future;
-    }
-
-    @Override
-    public CompletableFuture<List<Election>> getElections() {
-        return plugin.getManager().getElections();
-    }
-
-    @Override
-    public CompletableFuture<Boolean> addVote(UUID player, Election election, Party party) {
-        return plugin.getManager().vote(player, party, election);
-    }
-
-    @Override
-    public CompletableFuture<Boolean> addVote(Vote vote) {
-        return plugin.getManager().vote(vote);
     }
 }

@@ -28,15 +28,17 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 
 import me.lorenzo0111.elections.constants.Getters;
-import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
+import me.lorenzo0111.elections.database.EDatabaseSerializable;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
-public class Party implements DatabaseSerializable, ICacheEntry {
+public class Party implements EDatabaseSerializable, ICacheEntry {
     private final UUID id;
     private final String name;
     private String icon;
@@ -106,34 +108,16 @@ public class Party implements DatabaseSerializable, ICacheEntry {
         return icon;
     }
 
-    @Override
-    public DatabaseSerializable from(Map<String, Object> keys) {
-        UUID id = UUID.fromString((String) keys.get("id"));
-        String name = (String) keys.get("name");
-        UUID owner = UUID.fromString((String) keys.get("owner"));
-        String icon = (String) keys.get("icon");
+    public static Party fromResultSet(ResultSet resultSet) throws SQLException {
+        UUID id = UUID.fromString(resultSet.getString("id"));
+        String name = resultSet.getString("name");
+        UUID owner = UUID.fromString(resultSet.getString("owner"));
+        String icon = resultSet.getString("icon");
 
         Type type = new TypeToken<ArrayList<UUID>>() {}.getType();
-        List<UUID> members = new Gson().fromJson((String) keys.get("members"), type);
+        List<UUID> members = new Gson().fromJson(resultSet.getString("members"), type);
 
         return new Party(id, name, owner, icon, members, false);
-    }
-
-    public static Party fromResultSet(ResultSet resultSet) {
-        try {
-            UUID id = UUID.fromString(resultSet.getString("id"));
-            String name = resultSet.getString("name");
-            UUID owner = UUID.fromString(resultSet.getString("owner"));
-            String icon = resultSet.getString("icon");
-
-            Type type = new TypeToken<ArrayList<UUID>>() {}.getType();
-            List<UUID> members = new Gson().fromJson(resultSet.getString("members"), type);
-    
-            return new Party(id, name, owner, icon, members, false);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     @Override
@@ -153,16 +137,21 @@ public class Party implements DatabaseSerializable, ICacheEntry {
         return map;
     }
 
+    @Override
     public boolean dirty() {
         return dirty;
     }
 
-    public void delete() {
-        Getters.database().deleteParty(this);
+    @Override
+    public void clean() {
+        dirty = false;
     }
 
-    public void update() {
-        Getters.database().updateParty(this);
+    public CompletableFuture<Boolean> delete() {
+        return Getters.database().deleteParty(this);
     }
 
+    public CompletableFuture<Boolean> update() {
+        return Getters.database().updateParty(this);
+    }
 }

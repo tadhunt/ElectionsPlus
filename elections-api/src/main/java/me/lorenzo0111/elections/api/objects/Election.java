@@ -28,29 +28,36 @@ import com.google.gson.Gson;
 import com.google.common.reflect.TypeToken;
 
 import me.lorenzo0111.elections.constants.Getters;
-import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
+import me.lorenzo0111.elections.database.EDatabaseSerializable;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-public class Election implements DatabaseSerializable, ICacheEntry {
+public class Election implements EDatabaseSerializable, ICacheEntry {
     private final UUID id;
     private final String name;
-    private final Map<String, Party> parties;
+    private final Map<UUID, Boolean> parties;
     private boolean open;
     private boolean dirty;
 
-    public Election(UUID id, String name, Map<String, Party> parties, boolean open, boolean dirty) {
+    public Election(UUID id, String name, Set<UUID> parties, boolean open, boolean dirty) {
+        Map<UUID, Boolean> pmap = new HashMap<>();
+        for (UUID party : parties) {
+            pmap.put(party, true);
+        }
+
         this.id = id;
         this.name = name;
-        this.parties = parties;
+        this.parties = pmap;
         this.open = open;
         this.dirty = dirty;
     }
@@ -63,16 +70,16 @@ public class Election implements DatabaseSerializable, ICacheEntry {
         return name;
     }
 
-    public Map<String, Party> getParties() {
+    public Map<UUID, Boolean> getParties() {
         return parties;
     }
 
-    public Party getParty(String name) {
-        return parties.get(name);
+    public boolean partyExists(UUID id) {
+        return parties.get(id);
     }
 
-    public Boolean deleteParty(String name) {
-        if (parties.remove(name) == null) {
+    public Boolean deleteParty(UUID id) {
+        if (parties.remove(id) == null) {
             return false;
         }
 
@@ -81,12 +88,12 @@ public class Election implements DatabaseSerializable, ICacheEntry {
         return true;
     }
             
-    public void addParty(Party party) {
-        if (parties.get(party.getName()) != null) {
+    public void addParty(UUID id) {
+        if (parties.get(id) != null) {
             return;
         }
 
-        parties.put(party.getName(), party);
+        parties.put(id, true);
         this.dirty = true;
     }
 
@@ -99,27 +106,18 @@ public class Election implements DatabaseSerializable, ICacheEntry {
         return open;
     }
 
-    @Override
-    public DatabaseSerializable from(Map<String, Object> keys) throws RuntimeException {
-        throw new RuntimeException("You can't deserialize this class. You have to do that manually.");
+    public static Election fromResultSet(ResultSet result) throws SQLException {
+        UUID id = UUID.fromString(result.getString("id"));
+        String name = result.getString("name");
+
+        Type type = new TypeToken<List<UUID>>() {}.getType();
+        Set<UUID> parties = new Gson().fromJson(result.getString("parties"), type);
+
+        Boolean open = result.getInt("open") != 0;
+
+        return new Election(id, name, parties, open, false);
     }
-
-    public static Election fromResultSet(ResultSet result) {
-        try {
-            String id = result.getString("id");
-            String name = result.getString("name");
-            Type type = new TypeToken<ArrayList<String>>() {}.getType();
-            List<String> partyStrings = new Gson().fromJson(result.getString("parties"), type);
-            Boolean open = result.getInt("open") != 0;
-
-            return new Election(id, name, parties, open, false);
-
-        } catch(SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
+        
     @Override
     public @NotNull String tableName() {
         return "elections";
@@ -136,18 +134,23 @@ public class Election implements DatabaseSerializable, ICacheEntry {
         return map;
     }
 
+    @Override
     public boolean dirty() {
         return dirty;
     }
 
-    public void delete() {
-        Getters.database().deleteElection(this);
+    @Override
+    public void clean() {
+        dirty = false;
     }
 
-    public void update() {
-        if (!dirty) {
-            return;
-        }
-        Getters.database().updateElection(this);
+    @Override
+    public CompletableFuture<Boolean> delete() {
+        return Getters.database().deleteElection(this);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> update() {
+        return Getters.database().updateElection(this);
     }
 }

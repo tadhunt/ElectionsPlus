@@ -25,7 +25,8 @@
 package me.lorenzo0111.elections.api.objects;
 
 import me.lorenzo0111.elections.constants.Getters;
-import me.lorenzo0111.pluginslib.database.DatabaseSerializable;
+import me.lorenzo0111.elections.database.EDatabaseSerializable;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.ResultSet;
@@ -34,8 +35,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
-public class Vote implements DatabaseSerializable, ICacheEntry {
+public class Vote implements EDatabaseSerializable, ICacheEntry {
     private final UUID id;
     private final UUID player;
     private final String party;
@@ -70,28 +72,13 @@ public class Vote implements DatabaseSerializable, ICacheEntry {
         return player;
     }
 
-    @Override
-    public DatabaseSerializable from(Map<String, Object> keys) {
-        UUID id = UUID.fromString((String) keys.get("id"));
-        UUID player = UUID.fromString((String) keys.get("player"));
-        String party = (String) keys.get("party");
-        UUID electionId = UUID.fromString((String) keys.get("electionId"));
+    public static Vote fromResultSet(ResultSet results) throws SQLException {
+        UUID voteId = UUID.fromString(results.getString("id"));
+        UUID player = UUID.fromString(results.getString("player"));
+        String partyName = results.getString("party");
+        UUID electionId = UUID.fromString(results.getString("electionId"));
 
-        return new Vote(id, player, party, electionId, false);
-    }
-
-    public static Vote fromResultSet(ResultSet results) {
-        try {
-            UUID voteId = UUID.fromString(results.getString("id"));
-            UUID player = UUID.fromString(results.getString("player"));
-            String partyName = results.getString("party");
-            UUID electionId = UUID.fromString(results.getString("electionId"));
-
-            return new Vote(voteId, player, partyName, electionId, false);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
+        return new Vote(voteId, player, partyName, electionId, false);
     }
 
     @Override
@@ -130,18 +117,23 @@ public class Vote implements DatabaseSerializable, ICacheEntry {
         return Objects.hash(id, player, party, electionId);
     }
 
+    @Override
     public boolean dirty() {
         return dirty;
     }
 
-    public void delete() {
-        Getters.database().deleteVote(this);
+    @Override
+    public void clean() {
+        dirty = false;
     }
 
-    public void update() throws RuntimeException {
-        if (!dirty) {
-            return;
-        }
-        throw new RuntimeException("votes cannot be changed");
+    @Override
+    public CompletableFuture<Boolean> delete() {
+        return Getters.database().deleteVote(this);
+    }
+
+    @Override
+    public CompletableFuture<Boolean> update() {
+        return Getters.database().updateVote(this);
     }
 }

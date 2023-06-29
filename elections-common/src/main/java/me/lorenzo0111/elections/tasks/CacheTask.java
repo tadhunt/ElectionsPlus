@@ -57,7 +57,7 @@ public class CacheTask implements Runnable {
         database.getElections()
                 .thenAccept((elections) -> {
                     cache.getElections().reset();
-                    elections.forEach(election -> cache.getElections().add(election.getId(), election));
+                    elections.values().forEach(election -> cache.getElections().add(election.getId(), election));
                     if(completions.addAndGet(1) == nCompletions) {
                         reloaded.complete(true);
                     }

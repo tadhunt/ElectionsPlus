@@ -28,10 +28,12 @@ import java.util.UUID;
 
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.CacheEventHandler;
+import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.api.objects.Vote;
+import me.lorenzo0111.elections.api.objects.ElectionBlock;
 
 public class CacheManager {
     private final CacheEventHandler eventHandler;
@@ -39,6 +41,8 @@ public class CacheManager {
     private final Cache<UUID, Election> elections;
     private final Cache<UUID, Vote> votes;
     private final Cache<UUID, EClaim> claims;
+    private final Cache<UUID, DBHologram> holograms;
+    private final Cache<UUID, ElectionBlock> blocks;
 
     public CacheManager(CacheEventHandler eventHandler) {
         this.eventHandler = eventHandler;
@@ -46,6 +50,8 @@ public class CacheManager {
         this.elections = new MapCache<>();
         this.votes = new MapCache<>();
         this.claims = new MapCache<>();
+        this.holograms = new MapCache<>();
+        this.blocks = new MapCache<>();
     }
 
     public Cache<UUID, Party> getParties() {
@@ -62,6 +68,14 @@ public class CacheManager {
 
     public Cache<UUID, EClaim> getClaims() {
         return claims;
+    }
+
+    public Cache<UUID, DBHologram> getHolograms() {
+        return holograms;
+    }
+
+    public Cache<UUID, ElectionBlock> getBlocks() {
+        return blocks;
     }
 
     public CacheEventHandler getEventHandler() {

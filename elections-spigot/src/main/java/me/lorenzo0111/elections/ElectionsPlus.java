@@ -124,6 +124,9 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             this.gp = null;
             this.getLogger().info("GriefPrevention integration disabled: add GriefPrevention plugin to enable.");
         }
+
+        Getters.cache(this.cache);
+        Getters.database(this.manager);
     }
 
     @Override
@@ -303,7 +306,6 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             case "SQLITE":
                 try {
                     this.manager = new DatabaseManager(this.getLogger(), new BukkitScheduler(this), cache, config(), new SQLiteConnection(getDataFolder().toPath()));
-                    Getters.database(manager);
                 } catch (SQLException | IOException e) {
                     e.printStackTrace();
                 }
@@ -382,7 +384,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         return this.config().node(path).getString("");
     }
 
-    public IDatabaseManager getManager() {
+    public IDatabaseManager getDatabaseManager() {
         return manager;
     }
 
@@ -511,7 +513,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
         Cache<UUID, Election> elections = this.getCache().getElections();
         if (elections == null) {
-            this.getLogger().severe("getElectionStatuses: null elections");
+            this.getLogger().info("getElectionStatuses: null elections");
             return statuses;
         }
 
@@ -519,9 +521,9 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             statuses.put(election.getId(), new ElectionStatus(election));
         }
 
-        Cache<String, Vote> votes = this.getCache().getVotes();
+        Cache<UUID, Vote> votes = this.getCache().getVotes();
         if (votes == null) {
-            this.getLogger().severe("getElectionStatuses: null votes");
+            this.getLogger().info("getElectionStatuses: null votes");
             return statuses;
         }
 
@@ -555,5 +557,25 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     public GriefPrevention getGriefPrevention() {
         return gp;
+    }
+
+    public void deleteParty(Party party) {
+        Cache<UUID, Election> elections = getCache().getElections();
+        Cache<UUID, Party> parties = getCache().getParties();
+
+        parties.remove(party.getId());
+        parties.persist();
+
+        boolean edirty = false;
+        for(Election election : elections.map().values()) {
+            if (election.getParties().containsKey(party.getId())) {
+                election.deleteParty(party.getId());
+                edirty = true;
+            }
+        }
+
+        if (edirty) {
+            elections.persist();
+        }
     }
 }

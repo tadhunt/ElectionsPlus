@@ -25,8 +25,11 @@
 package me.lorenzo0111.elections.commands.childs;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.pluginslib.audience.User;
 import me.lorenzo0111.pluginslib.command.Command;
@@ -61,13 +64,16 @@ public class DisbandChild extends SubCommand {
             return;
         }
 
-        String electionName = a.get(0);
+        String name = a.get(0);
 
-        ElectionsPlus
-                .getInstance()
-                .getManager()
-                .deleteParty(electionName);
+        Cache<UUID, Party> parties = plugin.getCache().getParties();
 
-        Messages.send(sender.audience(), true, Messages.single("name", electionName), "disband", "deleted");
+        Party party = parties.findByName(name);
+        if (party == null) {
+            Messages.send(sender.audience(), true, Messages.single("name", name), "errors", "party-not-found");
+        } else {
+            plugin.deleteParty(party);
+            Messages.send(sender.audience(), true, Messages.single("name", name), "disband", "deleted");
+        }
     }
 }

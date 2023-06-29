@@ -29,6 +29,7 @@ import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.components.InteractionModifier;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.handlers.Messages;
 import net.kyori.adventure.text.Component;
@@ -40,13 +41,14 @@ import org.bukkit.event.inventory.ClickType;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 public class ElectionsMenu extends PaginatedGui {
     private final Player owner;
-    private final List<Election> elections;
+    private final Cache<UUID, Election> elections;
     private final ElectionsPlus plugin;
 
-    public ElectionsMenu(Player owner, List<Election> elections, ElectionsPlus plugin) {
+    public ElectionsMenu(Player owner, Cache<UUID, Election> elections, ElectionsPlus plugin) {
         super(3, 17, Messages.componentString(false, "guis", "elections"), EnumSet.noneOf(InteractionModifier.class));
 
         this.owner = owner;
@@ -61,7 +63,7 @@ public class ElectionsMenu extends PaginatedGui {
             this.setItem(3, 7, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "next")).asGuiItem(e -> this.next()));
             this.getFiller().fillBorder(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
 
-            for (Election election : elections) {
+            for (Election election : elections.map().values()) {
                 this.addItem(ItemBuilder
                         .from(Objects.requireNonNull(XMaterial.YELLOW_BANNER.parseItem()))
                         .name(Component.text("§9" + election.getName()))
@@ -72,17 +74,17 @@ public class ElectionsMenu extends PaginatedGui {
 
                                 if (election.isOpen()) {
                                     election.close();
-                                    plugin.holoRefresh();
-                                    return;
+                                } else {
+                                    elections.remove(election.getId());
                                 }
-
-                                plugin.getManager().deleteElection(election);
+                                elections.persist();
                                 plugin.holoRefresh();
                                 return;
                             }
 
-                            if (!election.isOpen())
+                            if (!election.isOpen()) {
                                 return;
+                            }
 
                             new VoteMenu(owner, election).setup();
                         }));

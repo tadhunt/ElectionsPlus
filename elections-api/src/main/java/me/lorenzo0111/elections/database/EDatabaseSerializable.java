@@ -1,7 +1,7 @@
 /*
- * This file is part of ElectionsPlus, licensed under the MIT License.
+ * This file is part of PluginsLib, licensed under the MIT License.
  *
- * Copyright (c) Lorenzo0111
+ * Copyright (c) Lorenzo0111, tadhunt
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +22,29 @@
  * SOFTWARE.
  */
 
-package me.lorenzo0111.elections.api;
+package me.lorenzo0111.elections.database;
 
-import me.lorenzo0111.elections.cache.CacheManager;
+import org.jetbrains.annotations.NotNull;
 
-public interface IElectionsPlusAPI {
-    CacheManager getCache();
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+/**
+ * An interface for class serialization
+ */
+public interface EDatabaseSerializable {
+    /**
+     * @return Name of the table
+     */
+    @NotNull String tableName();
+
+    /**
+     * @return A map with all objects to serialize
+     */
+    @NotNull Map<String, Object> serialize();
+
+    boolean dirty();
+    void clean();
+    CompletableFuture<Boolean> delete();
+    CompletableFuture<Boolean> update();
 }
