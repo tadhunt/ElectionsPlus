@@ -30,6 +30,8 @@ import dev.triumphteam.gui.components.InteractionModifier;
 import dev.triumphteam.gui.guis.BaseGui;
 import dev.triumphteam.gui.guis.GuiItem;
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.conversation.ConversationUtil;
 import me.lorenzo0111.elections.conversation.conversations.NameConversation;
@@ -41,12 +43,13 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 public class CreateElectionMenu extends BaseGui {
     private String name;
     private final Player player;
     private final ElectionsPlus plugin;
-    private final Map<String, Party> parties = new HashMap<>();
+    private final Map<UUID, Party> parties = new HashMap<>();
 
     public CreateElectionMenu(ElectionsPlus plugin, String name, Player player) {
         super(5, Messages.componentString(false, "guis", "create"), EnumSet.noneOf(InteractionModifier.class));
@@ -78,17 +81,19 @@ public class CreateElectionMenu extends BaseGui {
                 .lore(Messages.component(false, "guis", "save-lore"))
                 .asGuiItem(e -> {
                     e.getWhoClicked().closeInventory();
-                    plugin.getManager()
-                            .createElection(name, parties)
-                            .thenAccept(election -> {
-                                if (election == null) {
-                                    Messages.send(player, true, "errors", "election-exists");
-                                    return;
-                                }
+                    Cache<UUID, Election> elections = plugin.getCache().getElections();
 
-                                Messages.send(player, true, Messages.single("name", name), "election", "created");
-                                plugin.holoRefresh();
-                            });
+                    Election election = elections.findByName(name);
+                    if (election != null) {
+                        Messages.send(player, true, "errors", "election-exists");
+                        return;
+                    }
+
+                    election = new Election(UUID.randomUUID(), name, parties.keySet(), true, true);
+                    elections.add(election.getId(), election);
+                    elections.persist();
+                    Messages.send(player, true, Messages.single("name", name), "election", "created");
+                    plugin.holoRefresh();
                 });
 
 
@@ -102,9 +107,9 @@ public class CreateElectionMenu extends BaseGui {
                 .asGuiItem(e -> {
                     e.getWhoClicked().closeInventory();
                     Messages.send(e.getWhoClicked(), true, "loading");
-                    plugin.getManager()
-                            .getParties()
-                            .thenAccept((parties1) -> new AddPartyMenu(plugin, this, parties1, (Player)e.getWhoClicked(), parties).setup());
+
+                    Cache<UUID, Party> parties1 = plugin.getCache().getParties();
+                    new AddPartyMenu(plugin, this, parties1.map(), (Player)e.getWhoClicked(), parties).setup();
                 }));
 
         this.getFiller().fill(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
@@ -124,13 +129,13 @@ public class CreateElectionMenu extends BaseGui {
         return player;
     }
 
-    public Map<String, Party> getParties() {
+    public Map<UUID, Party> getParties() {
         return parties;
     }
 
-    public void addParties(Map<String, Party> newParties) {
+    public void addParties(Map<UUID, Party> newParties) {
         for (Party party : newParties.values()) {
-            parties.put(party.getName(), party);
+            parties.put(party.getId(), party);
         }
     }
 }

@@ -41,6 +41,7 @@ import me.filoghost.holographicdisplays.api.hologram.HologramLines;
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.Election;
+import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.handlers.Messages;
 
 public class ElectionsHologram {
@@ -96,6 +97,7 @@ public class ElectionsHologram {
                 HologramLines holoLines = holo.getLines();
                 holoLines.clear();
 
+                Cache<UUID, Party> parties = plugin.getCache().getParties();
                 for (String line : dbholo.getContents()) {
                     if (!line.equals("%elections_status%")) {
                         holoLines.appendText(Messages.componentString(false, Messages.single("text", line), "hologram", "text"));
@@ -113,18 +115,23 @@ public class ElectionsHologram {
 
                         placeholders.put("state", Messages.get("closed"));
 
-                        Map<String, Integer> winners = status.winners();
+                        Map<UUID, Integer> winners = status.winners();
                         if (winners == null || winners.size() == 0) {
                             holoLines.appendText(Messages.componentString(false, placeholders, "hologram-status", "closed-no-winner"));
                             continue;
                         }
 
                         String s = "";
-                        for (String partyName : winners.keySet()) {
+                        for (UUID partyId : winners.keySet()) {
+                            Party party = parties.get(partyId);
+                            if (party == null) {
+                                continue;
+                            }
+
                             if (!s.equals("")) {
                                 s += ", ";
                             }
-                            s += partyName;
+                            s += party.getName();
                         }
                         placeholders.put("winner", s);
 

@@ -43,15 +43,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 
 public class AddPartyMenu extends PaginatedGui {
-    private final Map<String, Party> parties;
+    private final Map<UUID, Party> parties;
     private final Player owner;
     private final ElectionsPlus plugin;
     private final CreateElectionMenu menu;
-    private final Map<String, Party> added = new HashMap<>();
+    private final Map<UUID, Party> added = new HashMap<>();
 
-    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, Map<String, Party> parties, Player owner) {
+    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, Map<UUID, Party> parties, Player owner) {
         super(3, 0, Messages.componentString(false, Messages.single("name", menu.getName()), "guis", "add-party"), new HashSet<InteractionModifier>());
 
         this.menu = menu;
@@ -60,11 +61,11 @@ public class AddPartyMenu extends PaginatedGui {
         this.plugin = plugin;
     }
 
-    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, Map<String, Party> parties, Player owner, Map<String, Party> alreadyAdded) {
+    public AddPartyMenu(ElectionsPlus plugin, CreateElectionMenu menu, Map<UUID, Party> parties, Player owner, Map<UUID, Party> alreadyAdded) {
         this(plugin, menu, parties, owner);
 
         for(Party party : alreadyAdded.values()) {
-            this.added.put(party.getName(), party);
+            this.added.put(party.getId(), party);
         }
     }
 
@@ -101,14 +102,14 @@ public class AddPartyMenu extends PaginatedGui {
         return (e -> {
             switch (e.getClick()) {
                 case LEFT:
-                    if (added.get(party.getName()) == null) {
-                        added.put(party.getName(), party);
+                    if (added.get(party.getId()) == null) {
+                        added.put(party.getId(), party);
                     }
                     item.name(Messages.component(false, Messages.single("name", party.getName()), "guis", "party-added"));
                     this.updatePageItem(e.getSlot(), item.asGuiItem(createAddAction(party, item)));
                     break;
                 case RIGHT:
-                    added.remove(party.getName());
+                    added.remove(party.getId());
                     item.name(Component.text("§9" + party.getName()));
                     this.updatePageItem(e.getSlot(), item.asGuiItem(createAddAction(party, item)));
                     break;

@@ -34,10 +34,7 @@ import me.lorenzo0111.elections.api.objects.Vote;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-
-import me.ryanhamshire.GriefPrevention.Claim;
 
 public interface IDatabaseManager {
     void closeConnection() throws SQLException;

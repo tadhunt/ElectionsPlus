@@ -26,6 +26,8 @@ package me.lorenzo0111.elections.commands.childs;
 
 import me.lorenzo0111.elections.ElectionStatus;
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.pluginslib.audience.User;
 import me.lorenzo0111.pluginslib.command.ICommand;
@@ -35,6 +37,7 @@ import me.lorenzo0111.pluginslib.command.annotations.Permission;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class InfoChild extends SubCommand {
 
@@ -80,13 +83,13 @@ public class InfoChild extends SubCommand {
         user.audience().sendMessage(Messages.component(true, calcPlaceholders, "votes", "title1"));
         user.audience().sendMessage(Messages.component(true, "votes", "title2"));
 
-        Map<String, Integer> votes = status.getPartyVotes();
+        Map<UUID, Integer> votes = status.getPartyVotes();
         if (votes.size() == 0) {
             user.audience().sendMessage(Messages.component(true, "votes", "status-no-parties"));
             return;
         }
 
-        Map<String, Integer> winners = status.winners();
+        Map<UUID, Integer> winners = status.winners();
         String winText = "";
         switch (winners.size()) {
         case 0:
@@ -99,9 +102,11 @@ public class InfoChild extends SubCommand {
             break;
         }
 
+        Cache<UUID, Party> parties = plugin.getCache().getParties();
+
         Integer total = status.getTotalVotes();
-        for(String partyName : votes.keySet()) {
-            Integer nvotes = votes.get(partyName);
+        for(UUID partyId : votes.keySet()) {
+            Integer nvotes = votes.get(partyId);
             Integer percent;
             if (total == 0) {
                 percent = 0;
@@ -109,8 +114,13 @@ public class InfoChild extends SubCommand {
                 percent = (nvotes * 100) / total;
             }
 
+            Party party = parties.get(partyId);
+            if (party == null) {
+                continue;
+            }
+
             HashMap<String, String> placeholders = new HashMap<String, String>();
-            placeholders.put("party", partyName);
+            placeholders.put("party", party.getName());
             placeholders.put("nvotes", nvotes.toString());
             placeholders.put("percent", percent.toString());
 
@@ -123,7 +133,7 @@ public class InfoChild extends SubCommand {
 
             placeholders.put("state", Messages.get("closed"));
 
-            if (winners.get(partyName) == null) {
+            if (winners.get(party.getId()) == null) {
                 user.audience().sendMessage(Messages.component(true, placeholders, "votes", "status-closed"));
             } else {
                 placeholders.put("winner", winText);

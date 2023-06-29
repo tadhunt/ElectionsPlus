@@ -39,7 +39,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -86,7 +85,7 @@ public class ElectionsMenu extends PaginatedGui {
                                 return;
                             }
 
-                            new VoteMenu(owner, election).setup();
+                            new VoteMenu(plugin, owner, election).setup();
                         }));
             }
 

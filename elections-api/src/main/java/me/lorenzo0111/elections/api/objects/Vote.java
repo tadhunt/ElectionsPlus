@@ -40,11 +40,11 @@ import java.util.concurrent.CompletableFuture;
 public class Vote implements EDatabaseSerializable, ICacheEntry {
     private final UUID id;
     private final UUID player;
-    private final String party;
+    private final UUID party;
     private final UUID electionId;
     private boolean dirty;
 
-    public Vote(UUID id, UUID player, String party, UUID electionId, boolean dirty) {
+    public Vote(UUID id, UUID player, UUID party, UUID electionId, boolean dirty) {
         this.dirty = dirty;
         this.id = id;
         this.player = player;
@@ -60,7 +60,7 @@ public class Vote implements EDatabaseSerializable, ICacheEntry {
         return null;
     }
 
-    public String getParty() {
+    public UUID getParty() {
         return party;
     }
 
@@ -75,10 +75,10 @@ public class Vote implements EDatabaseSerializable, ICacheEntry {
     public static Vote fromResultSet(ResultSet results) throws SQLException {
         UUID voteId = UUID.fromString(results.getString("id"));
         UUID player = UUID.fromString(results.getString("player"));
-        String partyName = results.getString("party");
+        UUID party = UUID.fromString(results.getString("party"));
         UUID electionId = UUID.fromString(results.getString("electionId"));
 
-        return new Vote(voteId, player, partyName, electionId, false);
+        return new Vote(voteId, player, party, electionId, false);
     }
 
     @Override

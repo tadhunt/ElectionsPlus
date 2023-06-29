@@ -25,33 +25,41 @@
 package me.lorenzo0111.elections.conversation.conversations;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
+import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.conversation.Conversation;
 import me.lorenzo0111.elections.handlers.Messages;
+
+import java.util.UUID;
+
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
 public class CreatePartyConversation extends Conversation {
+    private final ElectionsPlus plugin;
 
     public CreatePartyConversation(Player author, ElectionsPlus plugin) {
         super(Messages.componentString(false, "conversations", "create"), author, plugin);
+
+        this.plugin = plugin;
     }
 
     @Override
     public void handle(@Nullable String input) {
-        if (input == null)
+        if (input == null) {
             return;
+        }
 
-        this.getPlugin()
-                .getManager()
-                .createParty(input, this.getAuthor().getUniqueId())
-                .thenAccept((party) -> {
-                    if (party == null) {
-                        this.getAuthor().sendMessage(Messages.componentString(true, "parties", "duplicate"));
-                        return;
-                    }
+        Cache<UUID, Party> parties = plugin.getCache().getParties();
+        if (parties.findByName(input) != null) {
+            this.getAuthor().sendMessage(Messages.componentString(true, "parties", "duplicate"));
+            return;
+        }
 
-                    this.getAuthor().sendMessage(Messages.componentString(true, Messages.single("party", party.getName()), "parties", "created"));
-                });
+        Party party = new Party(UUID.randomUUID(), input, this.getAuthor().getUniqueId(), true);
+        parties.add(party.getId(), party);
+        parties.persist();
+
+        this.getAuthor().sendMessage(Messages.componentString(true, Messages.single("party", party.getName()), "parties", "created"));
     }
-
 }

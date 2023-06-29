@@ -112,10 +112,23 @@ public class ElectionsPlusPlaceholderExpansion extends PlaceholderExpansion {
         }
 
         if (params.startsWith("voted_")) {
-            String name = params.split("voted_")[1];
-            Vote vote = plugin.getCache().getVotes().get(name + "||" + player.getUniqueId());
+            String electionName = params.split("voted_")[1];
 
-            return vote != null ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
+            Cache<UUID, Election> elections = plugin.getCache().getElections();
+            Election election = elections.findByName(electionName);
+
+            if (election == null) {
+                return PlaceholderAPIPlugin.booleanFalse();
+            }
+
+            Cache<UUID, Vote> votes = plugin.getCache().getVotes();
+
+            Vote vote = plugin.findVote(votes, election, player.getUniqueId());
+            if (vote == null) {
+                return PlaceholderAPIPlugin.booleanFalse();
+            }
+
+            return PlaceholderAPIPlugin.booleanTrue();
 
         }
 

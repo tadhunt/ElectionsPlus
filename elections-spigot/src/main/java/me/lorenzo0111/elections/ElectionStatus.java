@@ -25,21 +25,21 @@ package me.lorenzo0111.elections;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import me.lorenzo0111.elections.api.objects.Election;
-import me.lorenzo0111.elections.api.objects.Party;
 
 public class ElectionStatus {
     private Election election;
     private Integer totalVotes;
-    private HashMap<String, Integer> partyVotes;
+    private HashMap<UUID, Integer> partyVotes;
 
     ElectionStatus(Election election) {
         this.election = election;
         this.totalVotes = 0;
-        this.partyVotes = new HashMap<String, Integer>();
-        for (Party party : election.getParties().values()) {
-            this.partyVotes.put(party.getName(), 0);
+        this.partyVotes = new HashMap<UUID, Integer>();
+        for (UUID partyId : election.getParties().keySet()) {
+            this.partyVotes.put(partyId, 0);
         }
     }
 
@@ -56,28 +56,28 @@ public class ElectionStatus {
         return totalVotes;
     }
 
-    public void addVote(String partyName) {
-        Integer partyCount = partyVotes.get(partyName);
+    public void addVote(UUID partyId) {
+        Integer partyCount = partyVotes.get(partyId);
         if (partyCount == null) {
             partyCount = 0;
         }
 
         partyCount++;
-        partyVotes.put(partyName, partyCount);
+        partyVotes.put(partyId, partyCount);
 
         totalVotes++;
     }
 
-    public Map<String, Integer> getPartyVotes() {
+    public Map<UUID, Integer> getPartyVotes() {
         return partyVotes;
     }
 
-    public Map<String, Integer> winners() {
+    public Map<UUID, Integer> winners() {
         Integer maxVotes = 0;
-        Map<String, Integer> winners = new HashMap<String, Integer>();
+        Map<UUID, Integer> winners = new HashMap<UUID, Integer>();
 
-        for (String partyName : partyVotes.keySet()) {
-            Integer n = partyVotes.get(partyName);
+        for (UUID partyId : partyVotes.keySet()) {
+            Integer n = partyVotes.get(partyId);
             if (n == 0) {
                     // no votes for this party
                     continue;
@@ -90,7 +90,7 @@ public class ElectionStatus {
 
             if (n == maxVotes) {
                 // this party has the same number of votes as the current leader(s)
-                winners.put(partyName, n);
+                winners.put(partyId, n);
                 continue;
             }
 
@@ -100,7 +100,7 @@ public class ElectionStatus {
             maxVotes = n;
 
             winners.clear();
-            winners.put(partyName, n);
+            winners.put(partyId, n);
         }
 
         return winners;

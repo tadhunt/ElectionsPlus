@@ -25,8 +25,12 @@
 package me.lorenzo0111.elections.listeners;
 
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.handlers.Messages;
+
+import java.util.UUID;
+
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -47,13 +51,19 @@ public class JoinListener implements Listener {
             return;
         }
 
-        ElectionsPlus.getInstance()
-                .getManager()
-                .getElections()
-                .thenAccept((elections) -> elections.stream()
-                        .filter(Election::isOpen)
-                        .findFirst()
-                        .ifPresent((e) -> Messages.send(event.getPlayer(), true, "join")));
+        Cache<UUID, Election> elections = plugin.getCache().getElections();
+
+        boolean open = false;
+        for (Election election : elections.map().values()) {
+            if (election.isOpen()) {
+                open = true;
+                break;
+            }
+        }
+
+        if (open) {
+            Messages.send(event.getPlayer(), true, "join");
+        }
     }
 
 }

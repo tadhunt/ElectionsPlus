@@ -41,7 +41,6 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
 import java.util.EnumSet;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 

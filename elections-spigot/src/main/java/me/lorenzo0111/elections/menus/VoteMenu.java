@@ -29,8 +29,10 @@ import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.components.InteractionModifier;
 import dev.triumphteam.gui.guis.PaginatedGui;
 import me.lorenzo0111.elections.ElectionsPlus;
+import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Party;
+import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.handlers.Messages;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -39,14 +41,17 @@ import org.bukkit.entity.Player;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.UUID;
 
 public class VoteMenu extends PaginatedGui {
+    private final ElectionsPlus plugin;
     private final Player owner;
     private final Election election;
 
-    public VoteMenu(Player owner, Election election) {
+    public VoteMenu(ElectionsPlus plugin, Player owner, Election election) {
         super(3, 0, Messages.componentString(false, Messages.single("name", election.getName()), "vote", "title"), new HashSet<InteractionModifier>());
 
+        this.plugin = plugin;
         this.owner = owner;
         this.election = election;
     }
@@ -57,7 +62,10 @@ public class VoteMenu extends PaginatedGui {
         this.setItem(3, 3, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "back")).asGuiItem(e -> this.previous()));
         this.setItem(3, 7, ItemBuilder.from(Material.ARROW).name(Messages.component(false, "guis", "next")).asGuiItem(e -> this.next()));
 
-        for (Party party : election.getParties().values()) {
+        Cache<UUID, Party> parties = plugin.getCache().getParties();
+        Cache<UUID, Vote> votes = plugin.getCache().getVotes();
+        for (UUID partyId : election.getParties().keySet()) {
+            Party party = parties.get(partyId);
             this.addItem(ItemBuilder.skull()
                     .name(Component.text("§9" + party.getName()))
                     .lore(Messages.component(false, "guis", "vote"))
@@ -65,18 +73,19 @@ public class VoteMenu extends PaginatedGui {
                     .owner(Bukkit.getOfflinePlayer(party.getOwner()))
                     .asGuiItem(e -> {
                         this.close(e.getWhoClicked());
-                        ElectionsPlus.getInstance()
-                                .getManager()
-                                .vote(e.getWhoClicked().getUniqueId(), party, election)
-                                .thenAccept((b) -> {
-                                   if (b) {
-                                       Messages.send(e.getWhoClicked(), true, Messages.multiple("party", party.getName(), "election", election.getName()), "vote", "success");
-                                       ElectionsPlus.getInstance().holoRefresh();
-                                       return;
-                                   }
 
-                                    Messages.send(e.getWhoClicked(), true, "vote", "already");
-                                });
+                        UUID player = e.getWhoClicked().getUniqueId();
+
+                        Vote vote = plugin.findVote(votes, election, player);
+                        if (vote != null) {
+                            Messages.send(e.getWhoClicked(), true, "vote", "already");
+                            return;
+                        }
+
+                        vote = new Vote(UUID.randomUUID(), player, party.getId(), election.getId(), true);
+                        votes.add(vote.getId(), vote);
+                        Messages.send(e.getWhoClicked(), true, Messages.multiple("party", party.getName(), "election", election.getName()), "vote", "success");
+                        plugin.holoRefresh();
                     }));
         }
 
