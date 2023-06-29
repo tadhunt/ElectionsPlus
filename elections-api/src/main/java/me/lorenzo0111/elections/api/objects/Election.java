@@ -52,8 +52,10 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
 
     public Election(UUID id, String name, Set<UUID> parties, boolean open, boolean dirty) {
         Map<UUID, Boolean> pmap = new HashMap<>();
-        for (UUID party : parties) {
-            pmap.put(party, true);
+        if (parties != null) {
+            for (UUID party : parties) {
+                pmap.put(party, true);
+            }
         }
 
         this.id = id;

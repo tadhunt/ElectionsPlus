@@ -24,7 +24,6 @@
 
 package me.lorenzo0111.elections.database;
 
-import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 

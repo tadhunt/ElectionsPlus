@@ -87,6 +87,7 @@ public class CreateChild extends SubCommand {
         Election election = new Election(UUID.randomUUID(), name, null, true, true);
 
         elections.add(election.getId(), election);
+        elections.persist();
 
         plugin.holoRefresh();
 
