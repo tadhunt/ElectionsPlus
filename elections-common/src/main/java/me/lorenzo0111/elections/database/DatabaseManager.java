@@ -24,6 +24,7 @@
 
 package me.lorenzo0111.elections.database;
 
+import com.google.gson.Gson;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -156,7 +157,8 @@ public class DatabaseManager implements IDatabaseManager {
         List<Column> hologramsColumns = new ArrayList<>();
         hologramsColumns.add(new Column("id", "TEXT"));
         hologramsColumns.add(new Column("name", "TEXT"));
-        hologramsColumns.add(new Column("json", "TEXT"));
+        hologramsColumns.add(new Column("location", "TEXT"));
+        hologramsColumns.add(new Column("contents", "TEXT"));
         this.hologramsTable = new ETable(logger, scheduler, connectionHandler, "holograms", hologramsColumns);
         this.hologramsTable.create();
         this.hologramsTable.setUnique("idx_hologram_id", "id");

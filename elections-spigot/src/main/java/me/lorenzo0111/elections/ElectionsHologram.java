@@ -58,6 +58,7 @@ public class ElectionsHologram {
         Cache<UUID, DBHologram> dbholos = plugin.getCache().getHolograms();
         DBHologram dbholo = new DBHologram(UUID.randomUUID(), name, new Gson().toJson(location.serialize()), contents, dirty);
         dbholos.add(dbholo.getId(), dbholo);
+        dbholos.persist();
 
         this.plugin = plugin;
         this.holoApi = api;
@@ -151,11 +152,16 @@ public class ElectionsHologram {
 
     public void clear() {
         holo.getLines().clear();
+        Cache<UUID, DBHologram> dbholos = plugin.getCache().getHolograms();
         dbholo.clear();
+        dbholos.persist();
     }
 
     public void delete() {
         holo.delete();
-        dbholo.delete();
+
+        Cache<UUID, DBHologram> dbholos = plugin.getCache().getHolograms();
+
+        dbholos.remove(dbholo.getId());
     }
 }
