@@ -41,6 +41,7 @@ import me.lorenzo0111.elections.database.DatabaseManager;
 import me.lorenzo0111.elections.database.IDatabaseManager;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.elections.listeners.JoinListener;
+import me.lorenzo0111.elections.listeners.VoteBlockListener;
 import me.lorenzo0111.elections.scheduler.BukkitScheduler;
 import me.lorenzo0111.pluginslib.audience.BukkitAudienceManager;
 import me.lorenzo0111.pluginslib.command.Customization;
@@ -85,6 +86,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
     private HashMap<String, ElectionsHologram> holograms;
     private HolographicDisplaysAPI holoApi;
     private GriefPrevention gp;
+    private VoteBlockListener voteBlockListener;
 
     @Override
     public void onEnable() {
@@ -252,6 +254,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     // called by CacheTask when the cache is ready
     public void onCacheReloaded() {
+        this.voteBlockListener = new VoteBlockListener(this);
         if (this.holoApi != null) {
             holoReset();
         }
@@ -594,5 +597,9 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
 
         return null;
+    }
+
+    public VoteBlockListener getVoteBlockListener() {
+        return voteBlockListener;
     }
 }

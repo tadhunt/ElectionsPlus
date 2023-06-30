@@ -36,21 +36,21 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public class Election implements EDatabaseSerializable, ICacheEntry {
-    private final UUID id;
-    private final String name;
-    private final Map<UUID, Boolean> parties;
+    private UUID id;
+    private String name;
+    private Map<UUID, Boolean> parties;
     private boolean open;
     private Version version;
 
-    public Election(UUID id, String name, Set<UUID> parties, boolean open, boolean dirty) {
+    public Election(UUID id, String name, Collection<UUID> parties, boolean open, boolean dirty) {
         Map<UUID, Boolean> pmap = new HashMap<>();
         if (parties != null) {
             for (UUID party : parties) {
@@ -114,7 +114,7 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
         String name = result.getString("name");
 
         Type type = new TypeToken<List<UUID>>() {}.getType();
-        Set<UUID> parties = new Gson().fromJson(result.getString("parties"), type);
+        List<UUID> parties = new Gson().fromJson(result.getString("parties"), type);
 
         Boolean open = result.getInt("open") != 0;
 
