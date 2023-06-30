@@ -53,7 +53,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 public class DatabaseManager implements IDatabaseManager {
@@ -172,34 +171,8 @@ public class DatabaseManager implements IDatabaseManager {
         this.claimsTable.create();
         this.claimsTable.setUnique("idx_claim_id", "id");
 
-        scheduler.repeating(new CacheTask(this, cache), 0L, config.node("cache-duration").getInt(5), TimeUnit.MINUTES);
+        scheduler.async(new CacheTask(this.logger, this, cache));
     }
-
-    /* 
-    public ETable getPartiesTable() {
-        return partiesTable;
-    }
-
-    public ETable getVotesTable() {
-        return votesTable;
-    }
-
-    public ETable getElectionsTable() {
-        return electionsTable;
-    }
-
-    public ETable getBlocksTable() {
-        return blocksTable;
-    }
-
-    public ETable getHologramsTable() {
-        return hologramsTable;
-    }
-
-    public ETable getClaimsTable() {
-        return claimsTable;
-    }
-    */
 
     @Override
     public void closeConnection() throws SQLException {

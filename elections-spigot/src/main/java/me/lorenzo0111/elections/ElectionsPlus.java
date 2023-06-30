@@ -250,7 +250,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         elections.persist();
     }
 
-    // called by CacheTask every time the cache is reloaded
+    // called by CacheTask when the cache is ready
     public void onCacheReloaded() {
         if (this.holoApi != null) {
             holoReset();

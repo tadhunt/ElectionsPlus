@@ -26,24 +26,36 @@ package me.lorenzo0111.elections.tasks;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Logger;
 
 import me.lorenzo0111.elections.cache.CacheManager;
 import me.lorenzo0111.elections.database.IDatabaseManager;
 
 public class CacheTask implements Runnable {
+    private Logger logger;
     private final IDatabaseManager database;
     private final CacheManager cache;
 
-    public CacheTask(IDatabaseManager database, CacheManager cache) {
+    public CacheTask(Logger logger, IDatabaseManager database, CacheManager cache) {
+        this.logger = logger;
         this.database = database;
         this.cache = cache;
     }
 
     @Override
     public void run() {
-        int nCompletions = 4;
+        int nCompletions = 6;
         AtomicInteger completions = new AtomicInteger(0);
         CompletableFuture<Boolean> reloaded = new CompletableFuture<Boolean>();
+
+        database.getVotes()
+                .thenAccept((votes) -> {
+                    cache.getVotes().reset();
+                    votes.forEach(vote -> cache.getVotes().add(vote.getId(), vote));
+                    if(completions.addAndGet(1) == nCompletions) {
+                        reloaded.complete(true);
+                    }
+                });
 
         database.getParties()
                 .thenAccept((parties) -> {
@@ -63,14 +75,24 @@ public class CacheTask implements Runnable {
                     }
                 });
 
-        database.getVotes()
-                .thenAccept((votes) -> {
-                    cache.getVotes().reset();
-                    votes.forEach(vote -> cache.getVotes().add(vote.getId(), vote));
+        database.getBlocks()
+                .thenAccept((blocks) -> {
+                    cache.getBlocks().reset();
+                    blocks.forEach(block -> cache.getBlocks().add(block.getId(), block));
                     if(completions.addAndGet(1) == nCompletions) {
                         reloaded.complete(true);
                     }
                 });
+
+        database.getHolograms()
+                .thenAccept((holograms) -> {
+                    cache.getHolograms().reset();
+                    holograms.values().forEach(hologram -> cache.getHolograms().add(hologram.getId(), hologram));
+                    if(completions.addAndGet(1) == nCompletions) {
+                        reloaded.complete(true);
+                    }
+                });
+
         database.getClaims()
                 .thenAccept((claims) -> {
                     cache.getClaims().reset();
@@ -81,6 +103,7 @@ public class CacheTask implements Runnable {
                 });
 
         reloaded.thenAccept((result) -> {
+            logger.info("loaded.");
             cache.getEventHandler().onCacheReloaded();
         });
     }
