@@ -47,12 +47,12 @@ public class CacheManager {
 
     public CacheManager(Logger logger, CacheEventHandler eventHandler) {
         this.eventHandler = eventHandler;
-        this.parties = new MapCache<>(logger);
-        this.elections = new MapCache<>(logger);
-        this.votes = new MapCache<>(logger);
-        this.claims = new MapCache<>(logger);
-        this.holograms = new MapCache<>(logger);
-        this.blocks = new MapCache<>(logger);
+        this.parties = new MapCache<>();
+        this.elections = new MapCache<>();
+        this.votes = new MapCache<>();
+        this.claims = new MapCache<>();
+        this.holograms = new MapCache<>();
+        this.blocks = new MapCache<>();
     }
 
     public Cache<UUID, Party> getParties() {
@@ -88,5 +88,7 @@ public class CacheManager {
         elections.persist();
         votes.persist();
         claims.persist();
+        holograms.persist();
+        blocks.persist();
     }
 }
