@@ -29,6 +29,7 @@ import me.lorenzo0111.elections.api.objects.ICacheEntry;
 import me.lorenzo0111.elections.database.Version;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
@@ -89,9 +90,11 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
     public int persist() {
         int nMutations = 0;
 
-        for (V value : delete.values()) {
-            nMutations++;
+        for (K key : Set.copyOf(delete.keySet())) {
+            V value = delete.get(key);
             value.delete();
+            delete.remove(key);
+            nMutations++;
         }
 
         for (V value : cache.values()) {
