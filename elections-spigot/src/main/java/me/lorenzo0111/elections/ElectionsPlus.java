@@ -121,7 +121,6 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         if (Bukkit.getPluginManager().isPluginEnabled("GriefPrevention")) {
             this.gp = GriefPrevention.instance;
             this.getLogger().info("GriefPrevention integration enabled.");
-            claimsInit();
         } else {
             this.gp = null;
             this.getLogger().info("GriefPrevention integration disabled: add GriefPrevention plugin to enable.");
@@ -254,10 +253,21 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     // called by CacheTask when the cache is ready
     public void onCacheReloaded() {
+        if(this.gp != null) {
+            claimsInit();
+        }
+
         this.voteBlockListener = new VoteBlockListener(this);
         if (this.holoApi != null) {
             holoReset();
         }
+
+        Customization customization = new Customization(null,
+                                            Messages.componentString(true, "errors", "command-not-found"),
+                                            Messages.componentString(true, "errors", "help")
+                                        );
+
+        new ElectionsCommand(this, "elections", customization);
     }
 
     private void holoReset() {
@@ -325,13 +335,6 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                 break;
         }
 
-        Customization customization = new Customization(null,
-                                            Messages.componentString(true, "errors", "command-not-found"),
-                                            Messages.componentString(true, "errors", "help")
-                                        );
-
-
-        new ElectionsCommand(this, "elections", customization);
     }
 
     private void load() {

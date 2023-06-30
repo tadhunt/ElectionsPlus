@@ -66,6 +66,9 @@ public class VoteMenu extends PaginatedGui {
         Cache<UUID, Vote> votes = plugin.getCache().getVotes();
         for (UUID partyId : election.getParties().keySet()) {
             Party party = parties.get(partyId);
+            if (party == null) {
+                continue;
+            }
             this.addItem(ItemBuilder.skull()
                     .name(Component.text("§9" + party.getName()))
                     .lore(Messages.component(false, "guis", "vote"))
@@ -84,6 +87,8 @@ public class VoteMenu extends PaginatedGui {
 
                         vote = new Vote(UUID.randomUUID(), player, party.getId(), election.getId(), true);
                         votes.add(vote.getId(), vote);
+                        votes.persist();
+
                         Messages.send(e.getWhoClicked(), true, Messages.multiple("party", party.getName(), "election", election.getName()), "vote", "success");
                         plugin.holoRefresh();
                     }));

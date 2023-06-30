@@ -44,6 +44,8 @@ public class CacheTask implements Runnable {
 
     @Override
     public void run() {
+        long start = System.currentTimeMillis();
+
         int nCompletions = 6;
         AtomicInteger completions = new AtomicInteger(0);
         CompletableFuture<Boolean> reloaded = new CompletableFuture<Boolean>();
@@ -103,7 +105,9 @@ public class CacheTask implements Runnable {
                 });
 
         reloaded.thenAccept((result) -> {
-            logger.info("loaded.");
+            long elapsedMs = System.currentTimeMillis() - start;
+            logger.info(String.format("Loaded in %d ms.", elapsedMs));
+
             cache.getEventHandler().onCacheReloaded();
         });
     }

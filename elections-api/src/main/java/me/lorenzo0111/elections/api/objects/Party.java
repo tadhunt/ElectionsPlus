@@ -129,7 +129,7 @@ public class Party implements EDatabaseSerializable, ICacheEntry {
     @Override
     public @NotNull Map<String, Object> serialize() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", name);
+        map.put("id", id);
         map.put("name", name);
         map.put("owner", owner);
         map.put("icon", icon);
