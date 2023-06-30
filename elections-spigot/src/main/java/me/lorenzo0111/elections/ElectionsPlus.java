@@ -73,7 +73,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler {
-    private final CacheManager cache = new CacheManager(this);
+    private final CacheManager cache = new CacheManager(this.getLogger(), this);
     private boolean loaded;
     private IDatabaseManager manager;
     private static ElectionsPlus instance;
@@ -253,11 +253,14 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     // called by CacheTask when the cache is ready
     public void onCacheReloaded() {
+        cleanCache();
+
         if(this.gp != null) {
             claimsInit();
         }
 
         this.voteBlockListener = new VoteBlockListener(this);
+
         if (this.holoApi != null) {
             holoReset();
         }
@@ -268,6 +271,75 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                                         );
 
         new ElectionsCommand(this, "elections", customization);
+    }
+
+    private void cleanCache() {
+        getLogger().severe("cleaning elections...");
+        cleanElections();
+        getLogger().severe("cleaning votes...");
+        cleanVotes();
+        getLogger().severe("cleaning done...");
+    }
+
+    private void cleanElections() {
+        try {
+            Cache<UUID, Election> elections = cache.getElections();
+            Cache<UUID, Party> parties = cache.getParties();
+
+            boolean dirty = false;
+
+            for(Election election : elections.map().values()) {
+                getLogger().severe("election " + election.getName());
+                for (UUID partyId : Map.copyOf(election.getParties()).keySet()) {
+                    getLogger().severe("election party id " + partyId.toString());
+                    Party party = parties.get(partyId);
+                    getLogger().severe("party " + (party == null ? "not found" : party.getName()));
+                    if (party == null) {
+                        election.deleteParty(partyId);
+                        dirty = true;
+                    }
+                    getLogger().severe("done with this one");
+                }
+            }
+
+            getLogger().severe("done cleaning elections, dirty: " + (dirty ? "true" : "false"));
+
+            if (dirty) {
+                getLogger().severe("cleanElection: modified elections, SKIPPING persisting...");
+    //            elections.persist();
+            }
+        } catch (Exception e) {
+            getLogger().severe("cleanCache: exception: " + e.toString());
+        }
+
+        getLogger().severe("cleanelections returning");
+    }
+
+    private void cleanVotes() {
+        Cache<UUID, Election> elections = cache.getElections();
+        Cache<UUID, Party> parties = cache.getParties();
+        Cache<UUID, Vote> votes = cache.getVotes();
+
+        boolean dirty = false;
+        for (Vote vote : votes.map().values()) {
+            Election election = elections.get(vote.getElectionId());
+            if (election == null) {
+                votes.remove(vote.getId());
+                dirty = true;
+                continue;
+            }
+
+            Party party = parties.get(vote.getParty());
+            if (party == null) {
+                votes.remove(vote.getId());
+                dirty = true;
+                continue;
+            }
+        }
+
+        if(dirty) {
+            votes.persist();
+        }
     }
 
     private void holoReset() {

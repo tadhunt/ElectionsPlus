@@ -30,10 +30,16 @@ import me.lorenzo0111.elections.database.Version;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
     private final Map<K, V> cache = new ConcurrentHashMap<>();
     private final Map<K, V> delete = new ConcurrentHashMap<>();
+    private Logger logger;
+
+    MapCache(Logger logger) {
+        this.logger = logger;
+    }
 
     @Override
     public int size() {
@@ -88,6 +94,7 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
     @Override
     public void persist() {
         for (V value : delete.values()) {
+logger.severe("deleting " + value.getName());
             value.delete();
         }
 
@@ -97,6 +104,7 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
             Integer lastVersion = version.getLast();
 
             if (currentVersion > lastVersion) {
+logger.severe("updating " + value.getName());
                 value.update()
                     .thenAccept((success) -> {
                         if (success) {

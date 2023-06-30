@@ -106,9 +106,10 @@ public class CacheTask implements Runnable {
 
         reloaded.thenAccept((result) -> {
             long elapsedMs = System.currentTimeMillis() - start;
-            logger.info(String.format("Loaded in %d ms.", elapsedMs));
 
             cache.getEventHandler().onCacheReloaded();
+
+            logger.info(String.format("Loaded in %d ms.", elapsedMs));
         });
     }
 }

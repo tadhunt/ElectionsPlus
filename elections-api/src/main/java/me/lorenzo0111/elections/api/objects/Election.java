@@ -78,7 +78,7 @@ public class Election implements EDatabaseSerializable, ICacheEntry {
     }
 
     public boolean partyExists(UUID id) {
-        return parties.get(id);
+        return parties.get(id) != null;
     }
 
     public Boolean deleteParty(UUID id) {

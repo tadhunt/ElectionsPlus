@@ -25,6 +25,7 @@
 package me.lorenzo0111.elections.cache;
 
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.CacheEventHandler;
@@ -44,14 +45,14 @@ public class CacheManager {
     private final Cache<UUID, DBHologram> holograms;
     private final Cache<UUID, ElectionBlock> blocks;
 
-    public CacheManager(CacheEventHandler eventHandler) {
+    public CacheManager(Logger logger, CacheEventHandler eventHandler) {
         this.eventHandler = eventHandler;
-        this.parties = new MapCache<>();
-        this.elections = new MapCache<>();
-        this.votes = new MapCache<>();
-        this.claims = new MapCache<>();
-        this.holograms = new MapCache<>();
-        this.blocks = new MapCache<>();
+        this.parties = new MapCache<>(logger);
+        this.elections = new MapCache<>(logger);
+        this.votes = new MapCache<>(logger);
+        this.claims = new MapCache<>(logger);
+        this.holograms = new MapCache<>(logger);
+        this.blocks = new MapCache<>(logger);
     }
 
     public Cache<UUID, Party> getParties() {
