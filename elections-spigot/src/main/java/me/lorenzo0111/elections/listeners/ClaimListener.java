@@ -29,22 +29,10 @@ public class ClaimListener implements Listener {
 
         plugin.getLogger().info(String.format("onClaimTransfer[claim %d]: newOwner %s", gclaim.getID(), newOwner == null ? "admin" : newOwner.toString()));
 
-        Cache<UUID, EClaim> eclaims = plugin.getCache().getClaims();
-
-        EClaim eclaim = findClaimByGpId(eclaims, gclaim.getID());
+        EClaim eclaim = plugin.findClaimByGpId(gclaim.getID());
         if (eclaim != null) {
-                plugin.claimTransfer(gclaim, eclaim, newOwner);
+            plugin.claimTransfer(gclaim, eclaim, newOwner);
         }
-    }
-
-    private EClaim findClaimByGpId(Cache<UUID, EClaim> eclaims, Long gpid) {
-        for (EClaim eclaim : eclaims.map().values()) {
-            if (eclaim.getGpId().equals(gpid)) {
-                return eclaim;
-            }
-        }
-
-        return null;
     }
 
     public void onClaimDeleted(ClaimPermissionCheckEvent event) {
@@ -52,19 +40,20 @@ public class ClaimListener implements Listener {
 
         plugin.getLogger().info(String.format("onClaimDeleted[claim %d]: claim deleted", gclaim.getID()));
 
-        Cache<UUID, EClaim> eclaims = plugin.getCache().getClaims();
-        Cache<UUID, Party> parties = plugin.getCache().getParties();
-
-        EClaim eclaim = findClaimByGpId(eclaims, gclaim.getID());
+        EClaim eclaim = plugin.findClaimByGpId(gclaim.getID());
         if (eclaim == null) {
             plugin.getLogger().info(String.format("onClaimDeleted[claim %d]: no corresponding elections claim to delete", gclaim.getID()));
             return;
         }
 
+        Cache<UUID, Party> parties = plugin.getCache().getParties();
+
         Party party = parties.findByName(eclaim.getName());
         if (party != null) {
             plugin.deleteParty(party);
         }
+
+        Cache<UUID, EClaim> eclaims = plugin.getCache().getClaims();
 
         eclaims.remove(eclaim.getId());
         eclaims.persist();

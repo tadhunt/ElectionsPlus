@@ -87,22 +87,33 @@ public class ClaimsChild extends SubCommand {
                 return;
             }
 
+            Cache<UUID, EClaim> claims = plugin.getCache().getClaims();
+
             String name = a.get(0);
+
+            if (claims.findByName(name) != null) {
+                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "already-exists");
+                return;
+            }
+
             Claim gclaim = gp.dataStore.getClaimAt(player.getLocation(), false, null);
             if (gclaim == null) {
                 Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "create-no-claim-here");
                 return;
             }
 
-            Cache<UUID, EClaim> claims = plugin.getCache().getClaims();
-            if (claims.findByName(name) != null) {
-                Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "claims", "already-exists");
+            EClaim eclaim = plugin.findClaimByGpId(gclaim.getID());
+            if (eclaim != null) {
+                Messages.send(sender.audience(), true, Messages.single("name", eclaim.getName()), "claims", "gp-already-exists");
                 return;
             }
 
-            EClaim eclaim = new EClaim(UUID.randomUUID(), name, gclaim, player.getUniqueId(), true);
+            eclaim = new EClaim(UUID.randomUUID(), name, gclaim, player.getUniqueId(), true);
             claims.add(eclaim.getId(), eclaim);
             claims.persist();
+
+            plugin.claimPartiesUpdate(eclaim);  // persists any mutations
+
             Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "created");
 
             return;

@@ -186,7 +186,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
         if (eclaim == null) {
             this.getLogger().info(String.format("claimTransfer[claim %d]: no corresponding elections claim", id));
-            return;
+            return ;
         }
 
         UUID oldOwner = eclaim.getOwner();
@@ -205,75 +205,89 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         }
 
         eclaim.setOwner(newOwner);
+
+        cache.getClaims().persist();
+
+        claimPartiesUpdate(eclaim);
     }
 
     private void claimPartiesInit() {
-        Cache<UUID, Election> elections = getCache().getElections();
         Cache<UUID, EClaim> eclaims = getCache().getClaims();
-        Cache<UUID, Party> parties = getCache().getParties();
-
-        Map<UUID, Party> partiesToDelete = new HashMap<>();
 
         for (EClaim eclaim : eclaims.map().values()) {
-            if (eclaim.getOwner() == null) {
-                Party party = parties.findByName(eclaim.getName());
-                if (party != null) {
-                    partiesToDelete.put(party.getId(), party);
-                }
+            claimPartiesUpdate(eclaim);
+        }
+    }
+            
+    public void claimPartiesUpdate(EClaim eclaim) {
+        Cache<UUID, Election> elections = getCache().getElections();
+        Cache<UUID, Party> parties = getCache().getParties();
+
+        if (eclaim.getOwner() == null) {
+            Party party = parties.findByName(eclaim.getName());
+            if (party != null) {
+                deleteParty(party);     // mutates and persists changes to elections and parties
+                getLogger().info(String.format("claimPartyUpdate: claim %s: owned by admin, deleted party %s.", eclaim.getName(), party.getName()));
+            }
+            return;
+        }
+
+        Party party = parties.findByName(eclaim.getName());
+        if (party == null) {
+            party = new Party(UUID.randomUUID(), eclaim.getName(), new UUID(0,0), true);
+            parties.add(party.getId(), party);
+            parties.persist();
+
+            getLogger().info(String.format("claimPartyUpdate: claim %s: created new party.", eclaim.getName()));
+        }
+
+        boolean dirty = false;
+        for (Election election : elections.map().values()) {
+            if (!election.isOpen()) {
+                this.getLogger().info(String.format("claimPartyUpdate: claim %s party %s election %s: skip (election closed).", eclaim.getName(), party.getName(), election.getName()));
                 continue;
             }
 
-            Party party = parties.findByName(eclaim.getName());
-            if (party == null) {
-                this.getLogger().info(String.format("claimPartyUpdate[party %s]: created new party.", eclaim.getName()));
-                party = new Party(UUID.randomUUID(), eclaim.getName(), new UUID(0,0), true);
-                parties.add(party.getId(), party);
+            if (election.partyExists(party.getId())) {
+                this.getLogger().info(String.format("claimPartyUpdate: claim %s party %s election %s: skip (party already present).", eclaim.getName(), party.getName(), election.getName()));
+                continue;
             }
 
-            for (Election election : elections.map().values()) {
-                if (!election.isOpen()) {
-                    this.getLogger().info(String.format("claimPartyUpdate[party %s]: election %s: skip (closed).", party.getName(), election.getName()));
-                    continue;
-                }
-
-                if (election.partyExists(party.getId())) {
-                    this.getLogger().info(String.format("claimPartyUpdate[party %s]: election %s: skip (party already present).", party.getName(), election.getName()));
-                    continue;
-                }
-
-                election.addParty(party.getId());
-                this.getLogger().info(String.format("claimPartyUpdate[party %s]: election %s: added party.", party.getName(), election.getName()));
-            }
+            election.addParty(party.getId());
+            dirty = true;
+            this.getLogger().info(String.format("claimPartyUpdate: claim %s party %s election %s: added party.", eclaim.getName(), party.getName(), election.getName()));
         }
 
-        for (Party party : partiesToDelete.values()) {
-            deleteParty(party);
+        if (dirty) {
+            elections.persist();
         }
-
-        parties.persist();
-        elections.persist();
     }
 
     // called by CacheTask when the cache is ready
     public void onCacheReloaded() {
-        cleanCache();
+        try {
+            cleanCache();
 
-        if(this.gp != null) {
-            claimsInit();
+            if(this.gp != null) {
+                claimsInit();
+            }
+
+            this.voteBlockListener = new VoteBlockListener(this);
+
+            if (this.holoApi != null) {
+                holoReset();
+            }
+
+            Customization customization = new Customization(null,
+                                                Messages.componentString(true, "errors", "command-not-found"),
+                                                Messages.componentString(true, "errors", "help")
+                                            );
+
+            new ElectionsCommand(this, "elections", customization);
+        } catch (Exception e) {
+            getLogger().severe(e.toString());
+            e.printStackTrace();
         }
-
-        this.voteBlockListener = new VoteBlockListener(this);
-
-        if (this.holoApi != null) {
-            holoReset();
-        }
-
-        Customization customization = new Customization(null,
-                                            Messages.componentString(true, "errors", "command-not-found"),
-                                            Messages.componentString(true, "errors", "help")
-                                        );
-
-        new ElectionsCommand(this, "elections", customization);
     }
 
     private void cleanCache() {
@@ -712,5 +726,16 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     public VoteBlockListener getVoteBlockListener() {
         return voteBlockListener;
+    }
+
+    public EClaim findClaimByGpId(Long gpid) {
+        Cache<UUID, EClaim> eclaims = cache.getClaims();
+        for (EClaim eclaim : eclaims.map().values()) {
+            if (eclaim.getGpId().equals(gpid)) {
+                return eclaim;
+            }
+        }
+
+        return null;
     }
 }

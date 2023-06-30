@@ -239,8 +239,8 @@ hologram-status:
 claims:
   gp-disabled: "<red>Claims commands disabled: enable GriefPrevention to use."
   create-no-claim-here: "<red>Claim <yellow><name><red> no claim found at player location."
-  create-fail: "<red>Claim <yellow><name><red> creation failed."
-  create-fail: "<red>Claim <yellow><name><red> already exists."
+  already-exists: "<red>Claim <yellow><name><red> already exists."
+  gp-already-exists: "<red>Claim already registered with name <yellow><name><red>."
   created: "<green>Claim <yellow><name><green> created."
   not-found: "<red>Claim <yellow><name><red> not found."
   delete-fail: "<red>Claim <yellow><name><red> deletion failed."

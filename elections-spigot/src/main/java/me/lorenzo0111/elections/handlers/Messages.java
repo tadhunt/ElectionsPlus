@@ -149,6 +149,7 @@ public class Messages {
                 for(Object element : oa) {
                     if (element instanceof String) {
                         newPath.add((String)element);
+                        pathDebug = pathDebug + (String)element + ".";
                     } else if (element instanceof Map) {
                         try {
                             Map<String, String> m = obj2strmap(element);
