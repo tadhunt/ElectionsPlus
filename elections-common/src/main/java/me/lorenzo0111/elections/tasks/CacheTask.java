@@ -25,19 +25,23 @@
 package me.lorenzo0111.elections.tasks;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import me.lorenzo0111.elections.cache.CacheManager;
 import me.lorenzo0111.elections.database.IDatabaseManager;
+import me.lorenzo0111.elections.scheduler.IAdvancedScheduler;
 
 public class CacheTask implements Runnable {
     private Logger logger;
+    private final IAdvancedScheduler scheduler;
     private final IDatabaseManager database;
     private final CacheManager cache;
 
-    public CacheTask(Logger logger, IDatabaseManager database, CacheManager cache) {
+    public CacheTask(Logger logger, IAdvancedScheduler scheduler, IDatabaseManager database, CacheManager cache) {
         this.logger = logger;
+        this.scheduler = scheduler;
         this.database = database;
         this.cache = cache;
     }
@@ -109,7 +113,17 @@ public class CacheTask implements Runnable {
 
             cache.getEventHandler().onCacheReloaded();
 
+            scheduler.repeating(this.persist(), 60 * 20L, 60, TimeUnit.SECONDS);
             logger.info(String.format("Loaded in %d ms.", elapsedMs));
         });
+    }
+
+    private Runnable persist() {
+        return () -> {
+            int nMutations = cache.persist();
+            if (nMutations > 0) {
+                logger.warning(String.format("CacheTask: persisted %d changes", nMutations));
+            }
+        };
     }
 }

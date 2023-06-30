@@ -81,7 +81,7 @@ public class VoteMenu extends PaginatedGui {
 
                         Vote vote = plugin.findVote(votes, election, player);
                         if (vote != null) {
-                            Messages.send(e.getWhoClicked(), true, "vote", "already");
+                            Messages.send(e.getWhoClicked(), true, Messages.single("election", election.getName()), "vote", "already");
                             return;
                         }
 

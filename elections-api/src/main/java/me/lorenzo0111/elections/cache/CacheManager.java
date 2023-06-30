@@ -83,12 +83,16 @@ public class CacheManager {
         return eventHandler;
     }
 
-    public void persist() {
-        parties.persist();
-        elections.persist();
-        votes.persist();
-        claims.persist();
-        holograms.persist();
-        blocks.persist();
+    public int persist() {
+        int nMutations = 0;
+
+        nMutations += parties.persist();
+        nMutations += elections.persist();
+        nMutations += votes.persist();
+        nMutations += claims.persist();
+        nMutations += holograms.persist();
+        nMutations += blocks.persist();
+
+        return nMutations;
     }
 }

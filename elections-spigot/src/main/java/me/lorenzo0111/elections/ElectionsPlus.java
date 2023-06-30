@@ -32,6 +32,7 @@ import me.lorenzo0111.elections.api.objects.CacheEventHandler;
 import me.lorenzo0111.elections.api.objects.DBHologram;
 import me.lorenzo0111.elections.api.objects.EClaim;
 import me.lorenzo0111.elections.api.objects.Election;
+import me.lorenzo0111.elections.api.objects.ElectionBlock;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.api.objects.Vote;
 import me.lorenzo0111.elections.cache.CacheManager;
@@ -56,6 +57,8 @@ import org.bstats.bukkit.Metrics;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -145,7 +148,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
              e.printStackTrace();
          }
 
-         Bukkit.getScheduler().cancelTasks(this);
+         Bukkit.getScheduler().cancelTasks(this);   // this could cause some queued up database updates to get lost...
 
          Messages.close();
     }
@@ -159,7 +162,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         Cache<UUID, EClaim> eclaims = getCache().getClaims();
         Cache<UUID, Party> parties = getCache().getParties();
 
-        for (EClaim eclaim : eclaims.map().values()) {
+        for (EClaim eclaim : Map.copyOf(eclaims.map()).values()) {
             Claim gclaim = gp.dataStore.getClaim(eclaim.getGpId());
 
             if (gclaim == null) {
@@ -275,11 +278,53 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     private void cleanCache() {
         try {
+            cleanParties();
             cleanElections();
             cleanVotes();
+            // claims handled by claimsInit()
+            // holograms handled by holoReset()
+            cleanBlocks();
         } catch (Exception e) {
             getLogger().severe("cleanCache: " + e.toString());
         }
+    }
+
+    private void cleanParties() {
+        // currently a noop - nothing can go bad because it doesn't link to any other entities
+    }
+
+    private void cleanBlocks() {
+        Cache<UUID, ElectionBlock> blocks = cache.getBlocks();
+
+        boolean dirty = false;
+        for (ElectionBlock block : Map.copyOf(blocks.map()).values()) {
+            if (!blockExists(block)) {
+                blocks.remove(block.getId());
+                dirty = true;
+                getLogger().info(String.format("Removed electionblock at location %s (blockdata changed)", block.getLocation().toString()));
+            }
+        }
+
+        if (dirty) {
+            blocks.persist();
+        }
+    }
+
+    private boolean blockExists(ElectionBlock eblock) {
+        World world = Bukkit.getWorld(eblock.getWorld());
+        if (world == null) {
+            return false;
+        }
+
+        Location location = Location.deserialize(eblock.getLocation());
+        Block block = world.getBlockAt(location);
+        String blockData = block.getBlockData().getAsString();
+
+        if (eblock.getBlockData().equals(blockData)) {
+            return true;
+        }
+
+        return false;
     }
 
     private void cleanElections() {
@@ -294,6 +339,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                 if (party == null) {
                     election.deleteParty(partyId);
                     dirty = true;
+                    getLogger().info(String.format("Removed party %s from election %s (party does not exist)", partyId.toString(), election.getName()));
                 }
             }
         }
@@ -314,6 +360,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             if (election == null) {
                 votes.remove(vote.getId());
                 dirty = true;
+                getLogger().info(String.format("Removed vote %s in election %s (election does not exist)", vote.getId().toString(), vote.getElectionId()));
                 continue;
             }
 
@@ -321,6 +368,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             if (party == null) {
                 votes.remove(vote.getId());
                 dirty = true;
+                getLogger().info(String.format("Removed vote %s for party %s in election %s (party does not exist)", vote.getId().toString(), vote.getParty(), election.getName()));
                 continue;
             }
         }

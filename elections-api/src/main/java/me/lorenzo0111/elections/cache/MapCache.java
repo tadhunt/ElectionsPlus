@@ -86,8 +86,11 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
     }
 
     @Override
-    public void persist() {
+    public int persist() {
+        int nMutations = 0;
+
         for (V value : delete.values()) {
+            nMutations++;
             value.delete();
         }
 
@@ -97,6 +100,7 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
             Integer lastVersion = version.getLast();
 
             if (currentVersion > lastVersion) {
+                nMutations++;
                 value.update()
                     .thenAccept((success) -> {
                         if (success) {
@@ -105,6 +109,8 @@ public class MapCache<K, V extends ICacheEntry> implements Cache<K, V> {
                     });
             }
         }
+
+        return nMutations;
     }
 
     @Override

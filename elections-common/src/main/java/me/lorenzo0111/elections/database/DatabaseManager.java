@@ -171,7 +171,7 @@ public class DatabaseManager implements IDatabaseManager {
         this.claimsTable.create();
         this.claimsTable.setUnique("idx_claim_id", "id");
 
-        scheduler.async(new CacheTask(this.logger, this, cache));
+        scheduler.async(new CacheTask(this.logger, scheduler, this, cache));
     }
 
     @Override

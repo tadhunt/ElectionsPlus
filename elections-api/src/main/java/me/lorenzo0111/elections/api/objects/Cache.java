@@ -34,6 +34,6 @@ public interface Cache<K, V extends ICacheEntry> {
     V remove(K key);
     V get(K key);
     Map<K, V> map();
-    void persist();
+    int persist();
     V findByName(String name);
 }

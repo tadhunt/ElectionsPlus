@@ -39,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 public interface IDatabaseManager {
     void closeConnection() throws SQLException;
 
-    //CompletableFuture<Election> createElection(String name, Map<String, Party> parties);
     CompletableFuture<Map<String, Election>> getElections();
     CompletableFuture<Boolean> updateElection(Election election);
     CompletableFuture<Boolean> deleteElection(Election election);

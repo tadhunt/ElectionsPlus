@@ -103,12 +103,13 @@ guis:
 
 #
 # Placeholders
-#   <party> - Party name
+#   <party>    - Party name
+#   <election> - Election name
 #
 vote:
   title: "<gray>Vote <blue>» <yellow><name>"
-  already: "You already voted in this election."
-  success: "You voted <party> in election <election>."
+  already: "<red>You already voted in election <yellow>election<red>."
+  success: "<green>You voted <yellow><party> <green>in election <yellow><election><green>."
 
 #
 # Placeholders
