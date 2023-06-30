@@ -27,11 +27,13 @@ public class ClaimListener implements Listener {
         Claim gclaim = event.getClaim();
         UUID newOwner = event.getNewOwner();
 
-        plugin.getLogger().info(String.format("onClaimTransfer[claim %d]: newOwner %s", gclaim.getID(), newOwner == null ? "admin" : newOwner.toString()));
 
         EClaim eclaim = plugin.findClaimByGpId(gclaim.getID());
         if (eclaim != null) {
+            plugin.getLogger().info(String.format("onClaimTransfer[claim %d/%s]: newOwner %s", gclaim.getID(), eclaim.getName(), newOwner == null ? "admin" : newOwner.toString()));
             plugin.claimTransfer(gclaim, eclaim, newOwner);
+        } else {
+            plugin.getLogger().info(String.format("onClaimTransfer[claim %d]: not tracked (ignore)", gclaim.getID()));
         }
     }
 

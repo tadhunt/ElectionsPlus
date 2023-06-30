@@ -232,8 +232,9 @@ hologram-status:
 
 #
 # Placeholders
-# name -  Claim name
-# id   -  Claim id
+# name  - Claim name
+# id    - Claim id
+# gpid  - Claim Grief Prevention id
 # owner - Claim owner
 #
 claims:
@@ -245,4 +246,4 @@ claims:
   not-found: "<red>Claim <yellow><name><red> not found."
   delete-fail: "<red>Claim <yellow><name><red> deletion failed."
   deleted: "<green>Claim <yellow><name><green> deleted."
-  list: "<gray>Claim <yellow><name><gray> » id <yellow><id><gray> » owner <yellow><owner><gray>."
+  list: "<gray>Claim <yellow><name><gray> » gpid <yellow><gpid><gray> » owner <yellow><owner><gray>."

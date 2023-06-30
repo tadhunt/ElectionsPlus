@@ -108,7 +108,7 @@ public class ClaimsChild extends SubCommand {
                 return;
             }
 
-            eclaim = new EClaim(UUID.randomUUID(), name, gclaim, player.getUniqueId(), true);
+            eclaim = new EClaim(UUID.randomUUID(), name, gclaim, gclaim.getOwnerID(), true);
             claims.add(eclaim.getId(), eclaim);
             claims.persist();
 
@@ -145,16 +145,17 @@ public class ClaimsChild extends SubCommand {
             for (EClaim claim : plugin.getCache().getClaims().map().values()) {
                 placeholders.put("name", claim.getName());
                 placeholders.put("id", claim.getId().toString());
+                placeholders.put("gpid", claim.getGpId().toString());
 
                 UUID owner = claim.getOwner();
                 if (owner == null) {
                     placeholders.put("owner", "Admin");
                 } else {
-                    OfflinePlayer p = Bukkit.getOfflinePlayer(owner);
-                    if (p == null) {
+                    OfflinePlayer op = Bukkit.getOfflinePlayer(owner);
+                    if (op == null) {
                         placeholders.put("owner", owner.toString());
                     } else {
-                        placeholders.put("owner", p.getName());
+                        placeholders.put("owner", op.getName());
                     }
                 }
 
