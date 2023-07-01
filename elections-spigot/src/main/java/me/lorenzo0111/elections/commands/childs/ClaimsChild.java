@@ -27,6 +27,7 @@ package me.lorenzo0111.elections.commands.childs;
 import me.lorenzo0111.elections.ElectionsPlus;
 import me.lorenzo0111.elections.api.objects.Cache;
 import me.lorenzo0111.elections.api.objects.EClaim;
+import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.elections.listeners.ClaimListener;
 import me.lorenzo0111.pluginslib.audience.User;
@@ -135,6 +136,13 @@ public class ClaimsChild extends SubCommand {
             }
             claims.remove(eclaim.getId());
             claims.persist();
+
+            Cache<UUID, Party> parties = plugin.getCache().getParties();
+            Party party = parties.findByName(eclaim.getName());
+            if (party != null) {
+                plugin.deleteParty(party);
+            }
+
             Messages.send(sender.audience(), true, Messages.single("name", name), "claims", "deleted");
 
             return;
