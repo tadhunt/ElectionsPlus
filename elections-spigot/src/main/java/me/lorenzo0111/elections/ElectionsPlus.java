@@ -155,7 +155,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
     private void claimsInit() {
         claimOwnersInit();
-        claimPartiesInit();
+        claimPartiesRefresh();
     }
         
     private void claimOwnersInit() {
@@ -211,7 +211,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         claimPartiesUpdate(eclaim);
     }
 
-    private void claimPartiesInit() {
+    public void claimPartiesRefresh() {
         Cache<UUID, EClaim> eclaims = getCache().getClaims();
 
         for (EClaim eclaim : eclaims.map().values()) {

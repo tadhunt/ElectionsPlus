@@ -89,6 +89,7 @@ public class CreateChild extends SubCommand {
         elections.add(election.getId(), election);
         elections.persist();
 
+        plugin.claimPartiesRefresh();  // persists any mutations
         plugin.holoRefresh();
 
         Messages.send(player, true, Messages.single("name", name), "election", "created");
