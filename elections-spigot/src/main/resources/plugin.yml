@@ -6,4 +6,4 @@ authors: [ Lorenzo0111, tadhunt ]
 commands:
   elections:
     description: Main command
-softdepend: [RealEstate, GriefPrevention, PlaceholderAPI, HolographicDisplays]
+softdepend: [RealEstate, GriefPrevention, PlaceholderAPI, HolographicDisplays, DecentHolograms]

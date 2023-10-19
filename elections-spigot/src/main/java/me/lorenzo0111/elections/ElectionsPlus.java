@@ -24,7 +24,6 @@
 
 package me.lorenzo0111.elections;
 
-import me.filoghost.holographicdisplays.api.HolographicDisplaysAPI;
 import me.lorenzo0111.elections.api.IElectionsPlusAPI;
 import me.lorenzo0111.elections.api.implementations.ElectionsPlusAPI;
 import me.lorenzo0111.elections.api.objects.Cache;
@@ -86,8 +85,8 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
     private ConfigurationNode messages;
 
     private Permission permissions;
-    private HashMap<String, ElectionsHologram> holograms;
-    private HolographicDisplaysAPI holoApi;
+    private HashMap<String, IElectionsHologram> holograms;
+    private ElectionsHologramAPI holoApi;
     private GriefPrevention gp;
     private VoteBlockListener voteBlockListener;
 
@@ -113,13 +112,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             this.getLogger().info("Placeholders disabled: add PlaceholderAPI plugin to enable.");
         }
 
-        if (Bukkit.getPluginManager().isPluginEnabled("HolographicDisplays")) {
-            this.holoApi = HolographicDisplaysAPI.get(this);
-            this.getLogger().info("Holograms enabled");
-        } else {
-            this.holoApi = null;
-            this.getLogger().info("Holograms disabled: add HolograpicDisplays plugin to enable.");
-        }
+        this.holoApi = new ElectionsHologramAPI(this);
 
         if (Bukkit.getPluginManager().isPluginEnabled("GriefPrevention")) {
             this.gp = GriefPrevention.instance;
@@ -274,7 +267,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
             this.voteBlockListener = new VoteBlockListener(this);
 
-            if (this.holoApi != null) {
+            if (this.holoApi.enabled()) {
                 holoReset();
             }
 
@@ -396,7 +389,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         if (this.holograms == null) {
             // first time: create holograms
 
-            this.holograms = new HashMap<String, ElectionsHologram>();
+            this.holograms = new HashMap<String, IElectionsHologram>();
 
             Cache<UUID, DBHologram> dbholograms = getCache().getHolograms();
 
@@ -404,7 +397,7 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
                 this.getLogger().info(String.format("Initializing %d holograms", dbholograms.size()));
                 for(DBHologram dbholo : dbholograms.map().values()) {
                     try {
-                        ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, dbholo);
+                        IElectionsHologram hologram = this.holoApi.create(dbholo);
                         holograms.put(hologram.getName(), hologram);
                     } catch (Exception e) {
                         this.getLogger().severe("holoReset: " + e.toString());
@@ -589,9 +582,9 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         return results;
     }
 
-    public ElectionsHologram holoCreate(String name, Location location, List<String> contents) {
-        if (this.holoApi == null) {
-            this.getLogger().severe("HolograpicDisplays plugin not enabled");
+    public IElectionsHologram holoCreate(String name, Location location, List<String> contents) {
+        if (!this.holoApi.enabled()) {
+            this.getLogger().severe("holograms plugin not enabled");
             return null;
         }
 
@@ -600,19 +593,19 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
             return null;
         }
 
-        ElectionsHologram hologram = new ElectionsHologram(this, this.holoApi, name, location, contents, true);
+        IElectionsHologram hologram = this.holoApi.create(name, location, contents, true);
 
         holograms.put(hologram.getName(), hologram);
 
         return hologram;
     }
 
-    public ElectionsHologram holoGet(String name) {
+    public IElectionsHologram holoGet(String name) {
         return holograms.get(name);
     }
 
     public Boolean holoDelete(String name) {
-        ElectionsHologram holo = holograms.remove(name);
+        IElectionsHologram holo = holograms.remove(name);
         if (holo == null) {
             return false;
         }
@@ -622,13 +615,13 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
         return true;
     }
 
-    public Collection<ElectionsHologram> holoList() {
+    public Collection<IElectionsHologram> holoList() {
         return holograms.values();
     }
 
     public void holoRefresh() {
         try {
-            for (ElectionsHologram holo : holograms.values()) {
+            for (IElectionsHologram holo : holograms.values()) {
                 holo.refresh();
             }
         } catch(Exception e) {

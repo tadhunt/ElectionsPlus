@@ -44,13 +44,13 @@ import me.lorenzo0111.elections.api.objects.Election;
 import me.lorenzo0111.elections.api.objects.Party;
 import me.lorenzo0111.elections.handlers.Messages;
 
-public class ElectionsHologram {
+public class ElectionsHDHologram implements IElectionsHologram {
     private ElectionsPlus plugin;
     private HolographicDisplaysAPI holoApi;
     private Hologram holo;
     private DBHologram dbholo;
 
-    ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, String name, Location location, List<String> contents, boolean dirty) {
+    ElectionsHDHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, String name, Location location, List<String> contents, boolean dirty) {
         if (contents == null) {
             contents = new ArrayList<String>();
         }
@@ -68,7 +68,7 @@ public class ElectionsHologram {
         refresh();
     }
 
-    ElectionsHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, DBHologram dbholo) {
+    ElectionsHDHologram(ElectionsPlus plugin, HolographicDisplaysAPI api, DBHologram dbholo) {
         this.plugin = plugin;
         this.holoApi = api;
         this.dbholo = dbholo;

@@ -24,7 +24,7 @@
 
 package me.lorenzo0111.elections.commands.childs;
 
-import me.lorenzo0111.elections.ElectionsHologram;
+import me.lorenzo0111.elections.IElectionsHologram;
 import me.lorenzo0111.elections.ElectionsPlus;
 import me.lorenzo0111.elections.handlers.Messages;
 import me.lorenzo0111.pluginslib.audience.User;
@@ -76,7 +76,7 @@ public class HoloChild extends SubCommand implements Listener {
             Location location = player.getLocation();
             String name = a.remove(0);
 
-            ElectionsHologram hologram = plugin.holoCreate(name, location, a);
+            IElectionsHologram hologram = plugin.holoCreate(name, location, a);
             if (hologram == null) {
                 Messages.send(sender.audience(), true, "hologram", "create-fail");
                 return;
@@ -106,9 +106,9 @@ public class HoloChild extends SubCommand implements Listener {
         }
 
         if (args[1].equalsIgnoreCase("list")) {
-            Collection<ElectionsHologram> holograms = plugin.holoList();
+            Collection<IElectionsHologram> holograms = plugin.holoList();
 
-            for (ElectionsHologram holo : holograms) {
+            for (IElectionsHologram holo : holograms) {
                 Messages.send(sender.audience(), true, Messages.multiple("name", holo.getName(), "location", holo.getLocation().toString()), "hologram", "list");
             }
 
