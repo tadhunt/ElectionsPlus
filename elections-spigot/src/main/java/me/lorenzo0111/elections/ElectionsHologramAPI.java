@@ -32,7 +32,7 @@ public class ElectionsHologramAPI {
             plugin.getLogger().info("DecentHolograms Holograms enabled");
         }
 
-        plugin.getLogger().info("Holograms disabled: add HolograpicDisplays plugin to enable.");
+        plugin.getLogger().info("Holograms disabled: add HolograpicDisplays or DecentHolograms plugin to enable.");
     }
 
     public boolean enabled() {

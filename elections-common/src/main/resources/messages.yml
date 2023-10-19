@@ -206,7 +206,7 @@ vote-block:
 #
 hologram:
   create-fail: "<red>hologram creation failed."
-  disabled:    "<red>Holograms disabled: HolographicDisplays plugin not found or disabled."
+  disabled:    "<red>Holograms disabled: HolographicDisplays or DecentHolograms plugin not found or disabled."
   created:     "<gray>Hologram <yellow><name><gray> created."
   deleted:     "<gray>Hologram <yellow><name><gray> deleted."
   not-found:   "<red>Hologram <yellow><name><red> not found."
