@@ -46,7 +46,7 @@ dependencies {
     compileOnly('org.spigotmc:spigot-api:1.19.4-R0.1-SNAPSHOT')
     compileOnly('me.clip:placeholderapi:2.11.3')
     compileOnly('me.filoghost.holographicdisplays:holographicdisplays-api:3.0.0')
-    compileOnly('com.github.TechFortress:GriefPrevention:16.18')
+    compileOnly('com.github.TechFortress:GriefPrevention:16.18.1')
     compileOnly('com.github.decentsoftware-eu:decentholograms:2.8.4')
 
     implementation('space.rocketplugins.pluginslib:bukkit:2.0.3.2')
