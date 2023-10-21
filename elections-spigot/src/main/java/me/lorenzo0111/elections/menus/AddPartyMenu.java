@@ -36,6 +36,7 @@ import me.lorenzo0111.elections.handlers.Messages;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
@@ -82,8 +83,9 @@ public class AddPartyMenu extends PaginatedGui {
             this.getFiller().fillBottom(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
 
             for (Party party : parties.values()) {
+                OfflinePlayer partyOwner = plugin.getPartyOwner(party, this.owner);
                 SkullBuilder item = ItemBuilder.skull()
-                        .owner(Bukkit.getOfflinePlayer(party.getOwner()))
+                        .owner(partyOwner)
                         .name(Component.text("§9" + party.getName()))
                         .lore(Messages.component(false, "guis", "add"), Messages.component(false, "guis", "remove"));
 

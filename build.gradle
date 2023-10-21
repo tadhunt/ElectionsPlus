@@ -56,7 +56,7 @@ subprojects {
     compileJava.options.encoding = "UTF-8"
     compileTestJava.options.encoding = "UTF-8"
 
-    version = "MCPD-1.2.5"
+    version = "MCPD-1.2.6"
     group = "me.lorenzo0111"
 
     repositories {

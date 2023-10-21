@@ -38,6 +38,7 @@ import me.lorenzo0111.elections.handlers.Messages;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.EnumSet;
@@ -76,11 +77,12 @@ public class PartiesMenu extends PaginatedGui {
             this.getFiller().fillBottom(ItemBuilder.from(Objects.requireNonNull(XMaterial.BLACK_STAINED_GLASS_PANE.parseItem())).asGuiItem());
 
             for (Party party : parties.map().values()) {
+                OfflinePlayer partyOwner = plugin.getPartyOwner(party, this.owner);
                 SkullBuilder item = ItemBuilder.skull()
                         .name(Component.text("§9" + party.getName()))
                         .lore(canEdit(owner, party) ? Messages.component(false, "guis", "edit-party") : Messages.component(false, "guis", "no-edit-party"));
 
-                item.owner(Bukkit.getOfflinePlayer(party.getOwner()));
+                item.owner(partyOwner);
 
                 if (party.getIcon() != null)
                     item.texture(party.getIcon());

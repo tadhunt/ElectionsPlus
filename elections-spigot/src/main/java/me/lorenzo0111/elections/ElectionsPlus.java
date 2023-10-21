@@ -56,6 +56,7 @@ import org.bstats.bukkit.Metrics;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -731,4 +732,24 @@ public final class ElectionsPlus extends JavaPlugin implements CacheEventHandler
 
         return null;
     }
+
+    /*
+     * NOTE(tadhunt): This is a hack to make sure that we have a non-null OfflinePlayer to
+     * use for the ItemBuilder API, otherwise we end up crashing with weird exceptions.
+     */
+    public OfflinePlayer getPartyOwner(Party party, OfflinePlayer defaultOwner) {
+        UUID nilUuid = new UUID(0, 0);
+        UUID partyOwnerUuid = party.getOwner();
+
+        if (partyOwnerUuid.equals(nilUuid)) {
+            return defaultOwner;
+        }
+
+        try {
+            return Bukkit.getOfflinePlayer(party.getOwner());
+        } catch(Exception e) {
+            return defaultOwner;
+        }
+    }
+
 }

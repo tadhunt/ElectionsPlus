@@ -37,6 +37,7 @@ import me.lorenzo0111.elections.handlers.Messages;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 
 import java.util.HashSet;
@@ -69,11 +70,14 @@ public class VoteMenu extends PaginatedGui {
             if (party == null) {
                 continue;
             }
+
+            OfflinePlayer partyOwner = plugin.getPartyOwner(party, this.owner);
+
             this.addItem(ItemBuilder.skull()
                     .name(Component.text("§9" + party.getName()))
                     .lore(Messages.component(false, "guis", "vote"))
                     .texture(party.getIcon())
-                    .owner(Bukkit.getOfflinePlayer(party.getOwner()))
+                    .owner(partyOwner)
                     .asGuiItem(e -> {
                         this.close(e.getWhoClicked());
 
