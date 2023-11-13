@@ -47,7 +47,7 @@ dependencies {
     compileOnly('me.clip:placeholderapi:2.11.4')
     compileOnly('me.filoghost.holographicdisplays:holographicdisplays-api:3.0.0')
     compileOnly('com.github.TechFortress:GriefPrevention:16.18.1')
-    compileOnly('com.github.decentsoftware-eu:decentholograms:2.8.4')
+    compileOnly('com.github.decentsoftware-eu:decentholograms:2.8.5')
 
     implementation('space.rocketplugins.pluginslib:bukkit:2.0.3.2')
     implementation("net.kyori:adventure-platform-bukkit:4.3.0")
