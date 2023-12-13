@@ -54,7 +54,7 @@ dependencies {
     implementation('org.bstats:bstats-bukkit:3.0.2')
     implementation("dev.triumphteam:triumph-gui:3.1.6")
 
-    slim('com.github.cryptomorin:XSeries:9.6.1.1')
+    slim('com.github.cryptomorin:XSeries:9.8.0')
 
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
 }
